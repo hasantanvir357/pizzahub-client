@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import MenuCard, { MenuItem } from "@/components/shared/MenuCard";
 import { ArrowRight } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function FeaturedMenu() {
   const [items, setItems] = useState<MenuItem[]>([]);
@@ -28,7 +29,13 @@ export default function FeaturedMenu() {
 
   return (
     <section className="bg-[#FFFDFB] py-16 border-y border-red-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <motion.div
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.15 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+      >
         <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-4">
           <div>
             <span className="text-xs font-bold uppercase tracking-widest text-[#E20001]">
@@ -65,7 +72,7 @@ export default function FeaturedMenu() {
             </p>
           </div>
         )}
-      </div>
+      </motion.div>
     </section>
   );
 }

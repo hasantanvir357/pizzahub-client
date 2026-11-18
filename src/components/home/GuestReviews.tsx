@@ -1,4 +1,7 @@
+'use client';
+
 import { Star } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const REVIEWS = [
   {
@@ -29,7 +32,13 @@ const REVIEWS = [
 export default function GuestReviews() {
   return (
     <section className="bg-[#FFF8F6] py-16 border-t border-red-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <motion.div
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.15 }}
+        transition={{ duration: 0.5, ease: 'easeOut' }}
+      >
         <div className="text-center mb-10">
           <span className="text-xs font-bold uppercase tracking-widest text-[#E20001]">What Our Guests Say</span>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mt-1">Customer Reviews</h2>
@@ -69,7 +78,7 @@ export default function GuestReviews() {
             </div>
           ))}
         </div>
-      </div>
+      </motion.div>
     </section>
   );
 }
