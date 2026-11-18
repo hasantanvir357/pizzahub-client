@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { getAuthUser, getToken } from '@/lib/auth-session';
 import { DollarSign, ShoppingBag, Trash2, Utensils, Users } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface RecentOrder {
   _id: string;
@@ -51,6 +52,9 @@ export default function DashboardOverviewPage() {
       });
       if (res.ok) {
         setRecentOrders([]);
+        toast.success('Overview history cleared.');
+      } else {
+        toast.error('Failed to clear overview history.');
       }
     } finally {
       setClearingHistory(false);
@@ -67,6 +71,9 @@ export default function DashboardOverviewPage() {
       });
       if (res.ok) {
         setRecentOrders((prev) => prev.filter((o) => o._id !== id));
+        toast.success('History log deleted.');
+      } else {
+        toast.error('Failed to delete history log.');
       }
     } catch {
       // Ignore transient failures; the overview list stays as-is.

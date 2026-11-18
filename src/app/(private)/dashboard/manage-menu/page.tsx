@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { getToken } from '@/lib/auth-session';
 import { Check, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface MenuItem {
   _id: string;
@@ -46,6 +47,9 @@ export default function ManageMenuPage() {
     });
     if (res.ok) {
       setItems((prev) => prev.map((item) => (item._id === id ? { ...item, status: 'approved' } : item)));
+      toast.success('Menu item approved!');
+    } else {
+      toast.error('Failed to approve menu item.');
     }
   };
 
@@ -54,7 +58,12 @@ export default function ManageMenuPage() {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${getToken()}` },
     });
-    if (res.ok) setItems((prev) => prev.filter((item) => item._id !== id));
+    if (res.ok) {
+      setItems((prev) => prev.filter((item) => item._id !== id));
+      toast.success('Menu item removed.');
+    } else {
+      toast.error('Failed to remove menu item.');
+    }
   };
 
   return (

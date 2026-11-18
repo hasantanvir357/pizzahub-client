@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { getToken } from '@/lib/auth-session';
+import { toast } from 'sonner';
 
 interface OrderItem {
   _id: string;
@@ -108,8 +109,11 @@ export default function MyOrdersPage() {
       // Cancelled orders are removed from the list immediately.
       setOrders((prev) => prev.filter((order) => order._id !== cancelTarget._id));
       closeCancelModal();
+      toast.success('Order cancelled.');
     } catch (err) {
-      setModalError(err instanceof Error ? err.message : 'Failed to cancel order');
+      const message = err instanceof Error ? err.message : 'Failed to cancel order';
+      setModalError(message);
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }

@@ -67,17 +67,17 @@
 }
 
 .animate-from-left {
-  animation: slideFromLeft 650ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: slideFromLeft 1100ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .animate-from-right {
-  animation: slideFromRight 650ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: slideFromRight 1100ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .animate-from-top {
-  animation: slideFromTop 650ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: slideFromTop 1100ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .animate-from-bottom {
-  animation: slideFromBottom 650ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: slideFromBottom 1100ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }

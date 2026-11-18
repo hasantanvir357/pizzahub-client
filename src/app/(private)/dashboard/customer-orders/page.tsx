@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getToken } from "@/lib/auth-session";
+import { toast } from "sonner";
 
 interface KitchenOrder {
   _id: string;
@@ -44,7 +45,11 @@ export default function CustomerOrdersPage() {
       },
       body: JSON.stringify({ status }),
     });
-    if (!res.ok) return;
+    if (!res.ok) {
+      toast.error("Failed to update order status.");
+      return;
+    }
+    toast.success("Order status updated!");
     setOrders((prev) =>
       status === "cancelled"
         ? // Cancelled orders leave the active table right away.

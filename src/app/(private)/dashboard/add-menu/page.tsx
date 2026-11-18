@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getToken } from '@/lib/auth-session';
 import { Loader2, PlusCircle, Upload } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function AddMenuPage() {
   const router = useRouter();
@@ -63,9 +64,13 @@ export default function AddMenuPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Failed to add pizza');
 
+      toast.success('New pizza submitted for admin approval!');
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       router.push('/dashboard/my-menu');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Something went wrong');
+      const message = err instanceof Error ? err.message : 'Something went wrong';
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }

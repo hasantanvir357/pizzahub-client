@@ -1,12 +1,30 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { MenuItem } from '@/components/shared/MenuCard';
-import { getToken, getAuthUser, AuthUser } from '@/lib/auth-session';
-import { ArrowLeft, CheckCircle2, Loader2, ShoppingBag, Store } from 'lucide-react';
 import Link from 'next/link';
+import { ArrowLeft, Store, CheckCircle2, Clock, ShieldAlert, CreditCard } from 'lucide-react';
+import { getAuthUser, getToken, AuthUser } from '@/lib/auth-session';
+import { toast } from 'sonner';
+import { AnimatePresence, motion } from 'framer-motion';
+
+interface MenuItem {
+  _id: string;
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  image: string;
+  toppings?: string[];
+  restaurantName?: string;
+}
+
+const SIZE_MULTIPLIERS: Record<'Regular' | 'Medium' | 'Large', number> = {
+  Regular: 1,
+  Medium: 1.25,
+  Large: 1.5,
+};
 
 export default function MenuDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -17,51 +35,65 @@ export default function MenuDetailsPage() {
   const [size, setSize] = useState<'Regular' | 'Medium' | 'Large'>('Regular');
   const [quantity, setQuantity] = useState(1);
   const [phone, setPhone] = useState('');
-  const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [address, setAddress] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('Cash on Delivery');
+  const [cardNumber, setCardNumber] = useState('4242 4242 4242 4242');
+  const [cardExpiry, setCardExpiry] = useState('12/34');
+  const [cardCvc, setCardCvc] = useState('123');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [user, setUser] = useState<AuthUser | null>(null);
 
+  const [user] = useState<AuthUser | null>(() => getAuthUser());
   useEffect(() => {
-    const syncUser = () => setUser(getAuthUser());
-    syncUser();
-    window.addEventListener('auth-change', syncUser);
-    return () => window.removeEventListener('auth-change', syncUser);
-  }, []);
-
-  const isVendorOrAdmin = user?.role === 'vendor' || user?.role === 'admin';
-
-  useEffect(() => {
+    let ignore = false;
     const fetchItem = async () => {
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/menu/${id}`);
         if (res.ok) {
           const data = await res.json();
-          setItem(data.item);
+          if (!ignore) setItem(data.item || data);
         }
       } finally {
-        setLoading(false);
+        if (!ignore) setLoading(false);
       }
     };
     if (id) fetchItem();
+    return () => {
+      ignore = true;
+    };
   }, [id]);
 
-  const multiplier = size === 'Large' ? 1.4 : size === 'Medium' ? 1.2 : 1;
-  const totalPrice = item ? (item.price * multiplier * quantity).toFixed(2) : '0.00';
+  if (loading) {
+    return <div className="max-w-5xl mx-auto px-4 py-16 text-center text-gray-500">Loading pizza details...</div>;
+  }
+
+  if (!item) {
+    return (
+      <div className="max-w-5xl mx-auto px-4 py-16 text-center">
+        <p className="text-gray-600 mb-4">Menu item not found.</p>
+        <Link href="/menu" className="text-[#E20001] font-semibold hover:underline">
+          Back to Menu
+        </Link>
+      </div>
+    );
+  }
+
+  const isStaff = user?.role === 'vendor' || user?.role === 'admin';
+  const unitPrice = Number((item.price * SIZE_MULTIPLIERS[size]).toFixed(2));
+  const totalAmount = Number((unitPrice * quantity).toFixed(2));
 
   const handleOrder = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isVendorOrAdmin) return;
-    setError('');
+    if (isStaff) return;
 
     const token = getToken();
-    if (!token) {
+    if (!token || !user) {
       router.push('/sign-in');
       return;
     }
 
     setSubmitting(true);
+    setError('');
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orders`, {
         method: 'POST',
@@ -70,205 +102,311 @@ export default function MenuDetailsPage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          menuId: id,
-          quantity,
+          menuItemId: item._id,
           size,
+          quantity,
+          totalPrice: totalAmount,
           phone,
-          deliveryAddress,
+          customerPhone: phone,
+          address,
+          deliveryAddress: address,
           paymentMethod,
         }),
       });
-
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Failed to place order');
-
-      router.push('/dashboard/orders');
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Order failed');
+      if (!res.ok) {
+        const message = data.message || 'Failed to place order';
+        setError(message);
+        toast.error(message);
+      } else {
+        toast.success('Order placed successfully!');
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        router.push('/dashboard/my-orders');
+      }
+    } catch {
+      const message = 'Network error while placing order.';
+      setError(message);
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="max-w-5xl mx-auto px-4 py-16">
-        <div className="h-96 rounded-3xl bg-gray-100 animate-pulse" />
-      </div>
-    );
-  }
-
-  if (!item) {
-    return (
-      <div className="max-w-3xl mx-auto px-4 py-20 text-center">
-        <h2 className="text-2xl font-bold text-gray-900">Pizza Not Found</h2>
-        <Link href="/menu" className="inline-block mt-4 text-sm font-bold text-[#E20001]">
-          ← Back to Menu
-        </Link>
-      </div>
-    );
-  }
-
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="max-w-5xl mx-auto px-4 py-10">
       <Link
         href="/menu"
-        className="inline-flex items-center gap-1.5 text-sm font-bold text-gray-600 hover:text-[#E20001] mb-6"
+        className="inline-flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-[#E20001] mb-6"
       >
-        <ArrowLeft className="w-4 h-4" /> Back to Menu
+        <ArrowLeft className="w-4 h-4" />
+        <span>Back to Menu</span>
       </Link>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 bg-white p-6 sm:p-8 rounded-3xl border border-gray-100 shadow-sm">
-        {/* Left: Pizza Image & Info */}
+      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Left: Image & Ingredients */}
         <div>
-          <div className="relative h-80 sm:h-96 rounded-2xl overflow-hidden bg-gray-100">
+          <div className="relative rounded-2xl overflow-hidden aspect-square bg-gray-100 mb-5">
             <Image
               src={item.image}
               alt={item.name}
               fill
-              sizes="(max-width: 640px) 100vw, 50vw"
+              sizes="(max-width: 768px) 100vw, 50vw"
               className="object-cover"
             />
-            <span className="absolute top-4 left-4 px-3.5 py-1 rounded-full bg-white/95 text-xs font-bold text-gray-800">
+            <span className="absolute top-3 left-3 bg-white/95 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-gray-800 shadow-sm">
               {item.category}
             </span>
           </div>
 
-          <div className="mt-6">
-            {item.restaurantName && (
-              <div className="inline-flex items-center gap-1.5 text-xs font-bold text-[#E20001] mb-1">
-                <Store className="w-4 h-4" /> {item.restaurantName}
-              </div>
-            )}
-            <h1 className="text-3xl font-extrabold text-gray-900">{item.name}</h1>
-            <p className="text-gray-600 text-sm leading-relaxed mt-3">{item.description}</p>
+          <p className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#E20001] mb-1">
+            <Store className="w-3.5 h-3.5" />
+            <span>{item.restaurantName || 'PizzaHub Kitchen'}</span>
+          </p>
+          <h1 className="text-2xl font-extrabold text-gray-900 mb-2">{item.name}</h1>
+          <p className="text-sm text-gray-600 leading-relaxed mb-5">{item.description}</p>
 
-            {item.toppings && item.toppings.length > 0 && (
-              <div className="mt-4">
-                <p className="text-xs font-bold uppercase text-gray-400 mb-2">Ingredients</p>
-                <div className="flex flex-wrap gap-2">
-                  {item.toppings.map((t) => (
-                    <span
-                      key={t}
-                      className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-red-50 text-[#E20001] text-xs font-semibold"
+          {item.toppings && item.toppings.length > 0 && (
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2">Ingredients</p>
+              <div className="flex flex-wrap gap-2">
+                {item.toppings.map((t) => (
+                  <span
+                    key={t}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-50 text-xs font-medium text-gray-700"
+                  >
+                    <CheckCircle2 className="w-3 h-3 text-[#E20001]" />
+                    {t}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Right: Role-Based Panel */}
+        <div className="bg-[#FAFAFA] rounded-2xl border border-gray-100 p-6 flex flex-col justify-between">
+          {isStaff ? (
+            /* Vendor & Admin View: ONLY Size & Pricing Breakdown (No Checkout Inputs) */
+            <div>
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Menu Pricing Overview</p>
+                  <p className="text-3xl font-extrabold text-[#E20001]">
+                    ${Number((item.price * SIZE_MULTIPLIERS[size]).toFixed(2))}
+                  </p>
+                </div>
+                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-red-50 text-[#E20001] text-xs font-bold uppercase">
+                  <ShieldAlert className="w-3.5 h-3.5" />
+                  {user?.role} View
+                </span>
+              </div>
+
+              <p className="text-xs font-bold text-gray-700 mb-3">Price by Pizza Size</p>
+              <div className="space-y-3 mb-6">
+                {(['Regular', 'Medium', 'Large'] as const).map((sz) => {
+                  const szPrice = Number((item.price * SIZE_MULTIPLIERS[sz]).toFixed(2));
+                  const selected = size === sz;
+                  return (
+                    <button
+                      key={sz}
+                      type="button"
+                      onClick={() => setSize(sz)}
+                      className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl border text-left transition-all ${
+                        selected
+                          ? 'bg-[#E20001] text-white border-[#E20001] shadow-sm'
+                          : 'bg-white text-gray-800 border-gray-200 hover:border-[#E20001]/40'
+                      }`}
                     >
-                      <CheckCircle2 className="w-3.5 h-3.5" /> {t}
-                    </span>
+                      <div>
+                        <p className="font-bold text-sm">{sz} Size</p>
+                        <p className={`text-xs ${selected ? 'text-white/80' : 'text-gray-500'}`}>
+                          {sz === 'Regular'
+                            ? '10" Standard Crust'
+                            : sz === 'Medium'
+                              ? '12" Classic Hand-Tossed'
+                              : '14" Family Feast'}
+                        </p>
+                      </div>
+                      <span className="text-lg font-extrabold">${szPrice}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="p-4 rounded-xl bg-white border border-gray-200 text-xs text-gray-600 leading-relaxed">
+                Signed in as <strong className="uppercase text-gray-900">{user?.role}</strong>. Checkout fields are
+                hidden for staff accounts; only size-wise menu pricing is displayed here.
+              </div>
+            </div>
+          ) : (
+            /* Customer View: Full Interactive Order Form */
+            <form onSubmit={handleOrder} className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Total Amount</p>
+                  <p className="text-3xl font-extrabold text-[#E20001]">${totalAmount}</p>
+                </div>
+                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold">
+                  <Clock className="w-3.5 h-3.5" />
+                  30-Min Express Delivery
+                </span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-2">Select Size</label>
+                <div className="grid grid-cols-3 gap-2.5">
+                  {(['Regular', 'Medium', 'Large'] as const).map((sz) => (
+                    <button
+                      key={sz}
+                      type="button"
+                      onClick={() => setSize(sz)}
+                      className={`py-2.5 rounded-xl text-xs font-bold border transition-all ${
+                        size === sz
+                          ? 'bg-[#E20001] text-white border-[#E20001]'
+                          : 'bg-white text-gray-700 border-gray-200 hover:border-[#E20001]'
+                      }`}
+                    >
+                      {sz} (${Number((item.price * SIZE_MULTIPLIERS[sz]).toFixed(2))})
+                    </button>
                   ))}
                 </div>
               </div>
-            )}
-          </div>
-        </div>
 
-        {/* Right: Order Customization & Checkout Form */}
-        <form onSubmit={handleOrder} className="bg-[#FFFDFB] p-6 rounded-2xl border border-red-100 space-y-5">
-          <div className="flex items-center justify-between border-b border-red-100 pb-4">
-            <div>
-              <p className="text-xs font-bold text-gray-400 uppercase">Total Amount</p>
-              <p className="text-3xl font-extrabold text-[#E20001]">${totalPrice}</p>
-            </div>
-            <span className="px-3 py-1 rounded-full bg-green-50 text-green-700 text-xs font-bold">
-              30-Min Express Delivery
-            </span>
-          </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">Quantity</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={20}
+                  value={quantity}
+                  onChange={(e) => setQuantity(Math.max(1, Number(e.target.value)))}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-200 text-sm focus:outline-none focus:border-[#E20001]"
+                  required
+                />
+              </div>
 
-          {error && (
-            <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs font-bold text-[#E20001]">
-              {error}
-            </div>
-          )}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">Phone Number</label>
+                <input
+                  type="tel"
+                  placeholder="+880 17XX-XXXXXX"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-200 text-sm focus:outline-none focus:border-[#E20001]"
+                  required
+                />
+              </div>
 
-          {isVendorOrAdmin && (
-            <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs font-bold text-[#E20001]">
-              Vendor and Admin accounts cannot place orders. Please sign in with a Customer account.
-            </div>
-          )}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">Delivery Address</label>
+                <textarea
+                  rows={2}
+                  placeholder="House, Road, Area, City..."
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-200 text-sm focus:outline-none focus:border-[#E20001]"
+                  required
+                />
+              </div>
 
-          {/* Size Selection */}
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-2">Select Size</label>
-            <div className="grid grid-cols-3 gap-2.5">
-              {(['Regular', 'Medium', 'Large'] as const).map((s) => (
-                <button
-                  type="button"
-                  key={s}
-                  onClick={() => setSize(s)}
-                  className={`py-2.5 rounded-xl border text-xs font-bold transition-all ${
-                    size === s
-                      ? 'border-[#E20001] bg-[#E20001] text-white'
-                      : 'border-gray-200 bg-white text-gray-700 hover:border-[#E20001]'
-                  }`}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">Payment Method</label>
+                <select
+                  value={paymentMethod}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-200 text-sm focus:outline-none focus:border-[#E20001]"
                 >
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
+                  <option value="Cash on Delivery">Cash on Delivery</option>
+                  <option value="Card / Stripe Payment">Card / Stripe Payment</option>
+                </select>
+              </div>
 
-          {/* Quantity */}
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1.5">Quantity</label>
-            <input
-              type="number"
-              min={1}
-              max={20}
-              value={quantity}
-              onChange={(e) => setQuantity(Math.max(1, Number(e.target.value)))}
-              className="w-full px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-sm font-bold focus:outline-none focus:border-[#E20001]"
-            />
-          </div>
+              <AnimatePresence initial={false}>
+                {paymentMethod === 'Card / Stripe Payment' && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{
+                      duration: 0.45,
+                      ease: [0.16, 1, 0.3, 1] as [number, number, number, number],
+                    }}
+                    className="overflow-hidden"
+                  >
+                    <div className="space-y-3 rounded-2xl border border-[#E20001]/25 bg-linear-to-br from-[#FFF6F5] to-white p-4 shadow-xs">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wide text-[#E20001]">
+                          <CreditCard className="w-4 h-4" />
+                          Test Card Details
+                        </p>
+                        <span className="rounded-full border border-gray-200 bg-white px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gray-500">
+                          Stripe Test Mode
+                        </span>
+                      </div>
+                      <div>
+                        <label htmlFor="card-number" className="block text-[11px] font-bold text-gray-600 mb-1">
+                          Card Number
+                        </label>
+                        <input
+                          id="card-number"
+                          type="text"
+                          inputMode="numeric"
+                          value={cardNumber}
+                          onChange={(e) => setCardNumber(e.target.value)}
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-200 text-sm tracking-wider focus:outline-none focus:border-[#E20001]"
+                          required
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label htmlFor="card-expiry" className="block text-[11px] font-bold text-gray-600 mb-1">
+                            Expiry
+                          </label>
+                          <input
+                            id="card-expiry"
+                            type="text"
+                            inputMode="numeric"
+                            value={cardExpiry}
+                            onChange={(e) => setCardExpiry(e.target.value)}
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-200 text-sm focus:outline-none focus:border-[#E20001]"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label htmlFor="card-cvc" className="block text-[11px] font-bold text-gray-600 mb-1">
+                            CVC
+                          </label>
+                          <input
+                            id="card-cvc"
+                            type="text"
+                            inputMode="numeric"
+                            value={cardCvc}
+                            onChange={(e) => setCardCvc(e.target.value)}
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-200 text-sm focus:outline-none focus:border-[#E20001]"
+                            required
+                          />
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-gray-500">
+                        Demo values are pre-filled. No real payment is processed.
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-          {/* Phone */}
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1.5">Phone Number</label>
-            <input
-              type="tel"
-              required
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="+880 17XX-XXXXXX"
-              className="w-full px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-sm focus:outline-none focus:border-[#E20001]"
-            />
-          </div>
+              {error && <p className="text-xs font-semibold text-[#E20001]">{error}</p>}
 
-          {/* Delivery Address */}
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1.5">Delivery Address</label>
-            <textarea
-              required
-              rows={2}
-              value={deliveryAddress}
-              onChange={(e) => setDeliveryAddress(e.target.value)}
-              placeholder="House, Road, Area, City..."
-              className="w-full px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-sm focus:outline-none focus:border-[#E20001]"
-            />
-          </div>
-
-          {/* Payment Method */}
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1.5">Payment Method</label>
-            <select
-              value={paymentMethod}
-              onChange={(e) => setPaymentMethod(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-sm font-medium focus:outline-none focus:border-[#E20001]"
-            >
-              <option value="Cash on Delivery">Cash on Delivery</option>
-              <option value="Card / Online">Card / Online Payment</option>
-            </select>
-          </div>
-
-          {!isVendorOrAdmin && (
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full py-3.5 rounded-xl bg-[#E20001] hover:bg-[#DB0007] text-white font-bold text-sm pizza-glow transition-all flex items-center justify-center gap-2 disabled:opacity-60"
-            >
-              {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShoppingBag className="w-4 h-4" />}
-              {submitting ? 'Placing Order...' : `Confirm Order • $${totalPrice}`}
-            </button>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full py-3 rounded-xl bg-[#E20001] hover:bg-[#DB0007] text-white font-bold text-sm transition-colors disabled:opacity-60"
+              >
+                {submitting ? 'Placing Order...' : `Confirm Order ($${totalAmount})`}
+              </button>
+            </form>
           )}
-        </form>
+        </div>
       </div>
     </div>
   );

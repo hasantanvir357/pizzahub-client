@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { setAuthSession } from "@/lib/auth-session";
+import { toast } from 'sonner';
 
 export default function SignInPage() {
   const router = useRouter();
@@ -36,6 +37,7 @@ export default function SignInPage() {
     const validationMessage = validatePassword(password);
     if (validationMessage) {
       setPasswordError(validationMessage);
+      toast.error(validationMessage);
       return;
     }
     setPasswordError('');
@@ -54,9 +56,13 @@ export default function SignInPage() {
       if (data.token && data.user) {
         setAuthSession(data.token, data.user);
       }
+      toast.success('Welcome back! Signing you in...');
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       router.push('/dashboard');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Login failed');
+      const message = err instanceof Error ? err.message : 'Login failed';
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }

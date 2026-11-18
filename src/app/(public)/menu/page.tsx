@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import MenuCard, { MenuItem } from '@/components/shared/MenuCard';
-import { ChevronLeft, ChevronRight, Search, SlidersHorizontal } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, SlidersHorizontal, ArrowRight } from 'lucide-react';
 
 const CATEGORIES = ['All', 'Classic Pizza', 'Meat Lovers', 'Veggie Delight', 'Sides & Drinks'];
 
@@ -82,7 +82,7 @@ export default function BrowseMenuPage() {
       {/* Top Red Offer Banner */}
       {activeOffer && (
         <div
-          className="mb-10 rounded-3xl overflow-hidden shadow-lg animate-from-top"
+          className="group mb-10 rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 animate-from-top"
           style={{ background: 'linear-gradient(135deg, #E20001 0%, #B80001 100%)' }}
         >
           <div className="flex flex-col sm:flex-row items-center gap-6 p-6 sm:p-8">
@@ -118,9 +118,10 @@ export default function BrowseMenuPage() {
               <div className="flex flex-wrap items-center gap-4 mt-5">
                 <Link
                   href={`/menu/${activeOffer._id}`}
-                  className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-white text-[#E20001] text-sm font-bold transition-all duration-300 ease-out hover:shadow-lg hover:bg-gray-50"
+                  className="group inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white text-[#E20001] text-sm font-bold transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-lg hover:bg-gray-50"
                 >
                   Order Now
+                  <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
                 </Link>
 
                 {offers.length > 1 && (
@@ -168,7 +169,7 @@ export default function BrowseMenuPage() {
                 alt={activeOffer.name}
                 fill
                 sizes="(max-width: 640px) 100vw, 256px"
-                className="object-cover"
+                className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
               />
             </div>
           </div>

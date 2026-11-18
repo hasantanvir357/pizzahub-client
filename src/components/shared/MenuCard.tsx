@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { ArrowRight } from 'lucide-react';
 import { getAuthUser, AuthUser } from '@/lib/auth-session';
 
 export interface MenuItem {
@@ -34,8 +35,8 @@ export default function MenuCard({ item, index = 0 }: { item: MenuItem; index?: 
 
   return (
     <div
-      style={{ animationDelay: `${index * 70}ms` }}
-      className="bg-white rounded-2xl border border-gray-100 shadow-xs hover:shadow-xl hover:-translate-y-2 hover:border-[#E20001]/35 transition-all duration-300 overflow-hidden flex flex-col animate-from-bottom"
+      style={{ animationDelay: `${index * 110}ms` }}
+      className="group bg-white rounded-2xl border border-gray-100 shadow-xs hover:shadow-xl hover:-translate-y-2 hover:border-[#E20001]/35 transition-all duration-500 overflow-hidden flex flex-col animate-from-bottom"
     >
       {/* Image & Badge */}
       <div className="relative h-52 w-full bg-gray-100 overflow-hidden">
@@ -44,7 +45,7 @@ export default function MenuCard({ item, index = 0 }: { item: MenuItem; index?: 
           alt={item.name}
           fill
           sizes="(max-width: 768px) 100vw, 33vw"
-          className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+          className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
         />
         <span className="absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-bold bg-white/95 text-gray-800 shadow-xs">
           {item.category}
@@ -84,16 +85,18 @@ export default function MenuCard({ item, index = 0 }: { item: MenuItem; index?: 
           {isVendorOrAdmin ? (
             <Link
               href={`/menu/${item._id}`}
-              className="px-4 py-2 rounded-lg bg-[#E20001] hover:bg-[#DB0007] text-white text-xs font-bold transition-colors"
+              className="group inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#E20001] hover:bg-[#DB0007] text-white text-xs font-bold transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-lg"
             >
               View Details
+              <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" />
             </Link>
           ) : (
             <Link
               href={`/menu/${item._id}`}
-              className="px-4 py-2 rounded-lg bg-[#E20001] hover:bg-[#DB0007] text-white text-xs font-bold transition-colors"
+              className="group inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#E20001] hover:bg-[#DB0007] text-white text-xs font-bold transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-lg"
             >
               Order Now
+              <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" />
             </Link>
           )}
         </div>

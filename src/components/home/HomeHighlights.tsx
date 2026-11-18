@@ -2,14 +2,14 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { ShoppingCart, Leaf, Flame, Truck } from 'lucide-react';
+import { ShoppingCart, Leaf, Flame, Truck, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export function SpecialOfferBanner() {
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
       <motion.div
-        className="rounded-3xl bg-linear-to-r from-[#E20001] to-[#DB0007] text-white p-8 sm:p-12 flex flex-col md:flex-row items-center justify-between gap-8 pizza-glow"
+        className="group rounded-3xl bg-linear-to-r from-[#E20001] to-[#DB0007] text-white p-8 sm:p-12 flex flex-col md:flex-row items-center justify-between gap-8 pizza-glow hover:shadow-2xl transition-all duration-500"
         initial={{ opacity: 0, y: 24 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.15 }}
@@ -25,20 +25,23 @@ export function SpecialOfferBanner() {
           </p>
           <Link
             href="/menu"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white text-[#E20001] font-bold text-sm hover:bg-gray-100 transition-colors"
+            className="group inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white text-[#E20001] font-bold text-sm hover:bg-gray-100 transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-lg"
           >
             <ShoppingCart className="w-4 h-4" />
             Order Now
+            <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
           </Link>
         </div>
-        <Image
-          src="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=600&q=80"
-          alt="Special Pizza Offer"
-          width={600}
-          height={600}
-          unoptimized
-          className="w-64 h-64 sm:w-72 sm:h-72 object-cover rounded-2xl shadow-2xl border-4 border-white/20 animate-from-right"
-        />
+        <div className="relative w-64 h-64 sm:w-72 sm:h-72 overflow-hidden rounded-2xl shadow-2xl border-4 border-white/20 animate-from-right">
+          <Image
+            src="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=600&q=80"
+            alt="Special Pizza Offer"
+            width={600}
+            height={600}
+            unoptimized
+            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+          />
+        </div>
       </motion.div>
     </section>
   );

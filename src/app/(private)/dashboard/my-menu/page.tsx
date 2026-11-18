@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { getToken } from '@/lib/auth-session';
 import { Trash2 } from 'lucide-react';
 import Image from 'next/image';
+import { toast } from 'sonner';
 
 interface VendorMenu {
   _id: string;
@@ -38,11 +39,16 @@ export default function MyMenuPage() {
 
   const handleDelete = async (id: string) => {
     const token = getToken();
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/menu/${id}`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/menu/${id}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
     });
+    if (!res.ok) {
+      toast.error('Failed to delete menu item.');
+      return;
+    }
     setItems((prev) => prev.filter((item) => item._id !== id));
+    toast.success('Menu item deleted.');
   };
 
   return (

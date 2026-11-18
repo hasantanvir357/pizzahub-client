@@ -7,13 +7,15 @@ import { ArrowRight, Flame, Clock, MapPin, Star } from 'lucide-react';
 export default function Banner() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
-      <section className="relative w-full min-h-[82vh] flex items-center justify-center overflow-hidden rounded-3xl bg-gray-950">
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat scale-105 animate-from-right"
-          style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=2070&auto=format&fit=crop')`,
-          }}
-        />
+      <section className="group relative w-full min-h-[82vh] flex items-center justify-center overflow-hidden rounded-3xl bg-gray-950 shadow-lg hover:shadow-2xl transition-all duration-500">
+        <div className="absolute inset-0 animate-from-right">
+          <div
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat scale-100 transition-transform duration-700 ease-out group-hover:scale-105"
+            style={{
+              backgroundImage: `url('https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=2070&auto=format&fit=crop')`,
+            }}
+          />
+        </div>
         <div className="absolute inset-0 bg-linear-to-b from-black/75 via-black/65 to-black/85" />
 
         {/* Content */}
@@ -57,10 +59,10 @@ export default function Banner() {
           >
             <Link
               href="/menu"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-full bg-[#E20001] hover:bg-[#DB0007] text-white font-bold text-base pizza-glow transition-all transform hover:-translate-y-0.5"
+              className="group w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-full bg-[#E20001] hover:bg-[#DB0007] text-white font-bold text-base pizza-glow transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-lg"
             >
               Explore Pizza Menu
-              <ArrowRight className="w-5 h-5" />
+              <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
             </Link>
           </motion.div>
 

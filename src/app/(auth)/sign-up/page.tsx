@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { User, Store, Upload, Loader2 } from 'lucide-react';
 import { setAuthSession } from "@/lib/auth-session";
+import { toast } from 'sonner';
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -51,6 +52,7 @@ export default function SignUpPage() {
     const validationMessage = validatePassword(password);
     if (validationMessage) {
       setPasswordError(validationMessage);
+      toast.error(validationMessage);
       return;
     }
     setPasswordError('');
@@ -81,9 +83,13 @@ export default function SignUpPage() {
       if (data.token && data.user) {
         setAuthSession(data.token, data.user);
       }
+      toast.success('Account created successfully! Redirecting...');
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       router.push('/dashboard');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Something went wrong');
+      const message = err instanceof Error ? err.message : 'Something went wrong';
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }

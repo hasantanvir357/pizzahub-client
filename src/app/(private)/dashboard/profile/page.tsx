@@ -1,22 +1,56 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { getAuthUser, getToken, setAuthSession, AuthUser } from '@/lib/auth-session';
+import { toast } from 'sonner';
 
 export default function ProfilePage() {
   const [user] = useState<AuthUser | null>(() => getAuthUser());
   const [name, setName] = useState(user?.name ?? '');
   const [restaurantName, setRestaurantName] = useState(user?.restaurantName ?? '');
+  const [image, setImage] = useState<string | null>(user?.image ?? null);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+
+  const uploadToImgBB = async (file: File) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    const res = await fetch(`https://api.imgbb.com/1.0?key=${process.env.NEXT_PUBLIC_IMGBB_API_KEY}`, {
+      method: 'POST',
+      body: formData,
+    });
+    const data = await res.json();
+    const url: string | undefined = data?.data?.url;
+    if (!res.ok || !url) throw new Error('Image upload failed');
+    return url;
+  };
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setMessage('');
+    try {
+      const url = await uploadToImgBB(file);
+      setImage(url);
+    } catch {
+      setMessage('Failed to upload profile photo. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     setMessage('');
 
-    const body: { name: string; restaurantName?: string } = { name };
+    const body: { name: string; restaurantName?: string; image?: string } = { name };
     if (user?.role === 'vendor') body.restaurantName = restaurantName;
+    if (image) body.image = image;
 
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile`, {
       method: 'PATCH',
@@ -29,12 +63,20 @@ export default function ProfilePage() {
 
     if (res.ok && user) {
       const data = await res.json();
-      const updated: AuthUser = { ...user, ...data.user, name, ...(user.role === 'vendor' ? { restaurantName } : {}) };
+      const updated: AuthUser = {
+        ...user,
+        ...data.user,
+        name,
+        ...(user.role === 'vendor' ? { restaurantName } : {}),
+        ...(image ? { image } : {}),
+      };
       const token = getToken();
       if (token) setAuthSession(token, updated);
       setMessage('Profile updated successfully.');
+      toast.success('Profile updated successfully!');
     } else {
-      setMessage('Failed to update profile. Please try again.');
+      setError('Failed to update profile. Please try again.');
+      toast.error('Failed to update profile. Please try again.');
     }
     setSaving(false);
   };
@@ -46,6 +88,33 @@ export default function ProfilePage() {
       <h1 className="text-2xl font-extrabold text-gray-900 mb-6">Profile Settings</h1>
 
       <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-gray-100 p-6 space-y-5">
+        {/* Avatar Preview & Optional Profile Photo */}
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 rounded-full overflow-hidden bg-red-50 border border-red-100 flex items-center justify-center shrink-0">
+            {user?.image ? (
+              <Image src={user.image} alt={user.name} width={64} height={64} className="w-full h-full object-cover" />
+            ) : (
+              <span className="w-10 h-10 rounded-full bg-[#E20001] text-white text-lg font-bold flex items-center justify-center">
+                {user?.name?.charAt(0) ?? '?'}
+              </span>
+            )}
+          </div>
+          <div>
+            <label htmlFor="profile-photo" className="block text-xs font-bold uppercase text-gray-500 mb-1.5">
+              Optional Profile Photo
+            </label>
+            <input
+              id="profile-photo"
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              disabled={uploading}
+              className="block w-full text-sm text-gray-600 file:mr-3 file:rounded-lg file:border-0 file:bg-[#E2001] file:px-4 file:py-2 file:text-xs file:font-bold file:text-white hover:file:bg-[#DB0007] disabled:opacity-60"
+            />
+            <p className="text-xs text-gray-400 mt-1.5">PNG or JPG, uploaded to ImgBB before saving.</p>
+          </div>
+        </div>
+
         <div>
           <label htmlFor="name" className="block text-xs font-bold uppercase text-gray-500 mb-1.5">
             Full Name
@@ -80,6 +149,7 @@ export default function ProfilePage() {
           <p className="text-sm text-gray-600">{user.email}</p>
         </div>
 
+        {error && <p className="text-sm font-bold text-[#E20001]">{error}</p>}
         {message && <p className="text-sm font-bold text-green-600">{message}</p>}
 
         <button

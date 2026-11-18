@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { ShieldCheck } from 'lucide-react';
 import { getToken } from '@/lib/auth-session';
+import { toast } from 'sonner';
 
 type UserRole = 'customer' | 'vendor' | 'admin';
 
@@ -46,7 +47,12 @@ export default function BlockedUsersPage() {
       },
       body: JSON.stringify({ isBlocked: false }),
     });
-    if (res.ok) setUsers((prev) => prev.filter((user) => user._id !== id));
+    if (res.ok) {
+      setUsers((prev) => prev.filter((user) => user._id !== id));
+      toast.success('User unblocked.');
+    } else {
+      toast.error('Failed to unblock user.');
+    }
   };
 
   return (

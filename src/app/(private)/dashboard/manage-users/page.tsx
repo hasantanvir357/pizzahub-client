@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { ShieldBan } from 'lucide-react';
 import { AuthUser, getAuthUser, getToken } from '@/lib/auth-session';
+import { toast } from 'sonner';
 
 type UserRole = 'customer' | 'vendor' | 'admin';
 
@@ -57,7 +58,12 @@ export default function ManageUsersPage() {
       },
       body: JSON.stringify({ role }),
     });
-    if (res.ok) setUsers((prev) => prev.map((user) => (user._id === id ? { ...user, role } : user)));
+    if (res.ok) {
+      setUsers((prev) => prev.map((user) => (user._id === id ? { ...user, role } : user)));
+      toast.success('User role updated!');
+    } else {
+      toast.error('Failed to update user role.');
+    }
   };
 
   const handleBlock = async (id: string) => {
@@ -69,7 +75,12 @@ export default function ManageUsersPage() {
       },
       body: JSON.stringify({ isBlocked: true }),
     });
-    if (res.ok) setUsers((prev) => prev.map((user) => (user._id === id ? { ...user, isBlocked: true } : user)));
+    if (res.ok) {
+      setUsers((prev) => prev.map((user) => (user._id === id ? { ...user, isBlocked: true } : user)));
+      toast.warning('User has been blocked.');
+    } else {
+      toast.error('Failed to block user.');
+    }
   };
 
   return (
