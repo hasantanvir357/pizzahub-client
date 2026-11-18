@@ -41,19 +41,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const navItems = [
     { label: 'Overview', href: '/dashboard', icon: LayoutDashboard },
-    ...(user.role === 'customer' ? [{ label: 'My Orders', href: '/dashboard/orders', icon: ShoppingBag }] : []),
+    ...(user.role === 'customer' ? [{ label: 'My Orders', href: '/dashboard/my-orders', icon: ShoppingBag }] : []),
     ...(user.role === 'vendor'
       ? [
           { label: 'Add New Pizza', href: '/dashboard/add-menu', icon: PlusCircle },
           { label: 'My Menu Items', href: '/dashboard/my-menu', icon: UtensilsCrossed },
-          { label: 'Kitchen Orders', href: '/dashboard/orders', icon: ShoppingBag },
+          { label: 'Kitchen Orders', href: '/dashboard/customer-orders', icon: ShoppingBag },
         ]
       : []),
     ...(user.role === 'admin'
       ? [
-          { label: 'Approve Menus', href: '/dashboard/manage-menus', icon: CheckSquare },
+          { label: 'Approve Menus', href: '/dashboard/manage-menu', icon: CheckSquare },
           { label: 'Manage Users', href: '/dashboard/manage-users', icon: Users },
-          { label: 'All Orders', href: '/dashboard/orders', icon: ShoppingBag },
+          { label: 'All Orders', href: '/dashboard/customer-orders', icon: ShoppingBag },
         ]
       : []),
     { label: 'My Profile', href: '/dashboard/profile', icon: UserCircle },
