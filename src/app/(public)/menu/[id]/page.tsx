@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { MenuItem } from '@/components/shared/MenuCard';
 import { getToken } from '@/lib/auth-session';
 import { ArrowLeft, CheckCircle2, Loader2, ShoppingBag, Store } from 'lucide-react';
@@ -110,7 +111,13 @@ export default function MenuDetailsPage() {
         {/* Left: Pizza Image & Info */}
         <div>
           <div className="relative h-80 sm:h-96 rounded-2xl overflow-hidden bg-gray-100">
-            <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+            <Image
+              src={item.image}
+              alt={item.name}
+              fill
+              sizes="(max-width: 640px) 100vw, 50vw"
+              className="object-cover"
+            />
             <span className="absolute top-4 left-4 px-3.5 py-1 rounded-full bg-white/95 text-xs font-bold text-gray-800">
               {item.category}
             </span>
