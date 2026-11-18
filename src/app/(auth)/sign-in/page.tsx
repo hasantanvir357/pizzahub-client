@@ -13,10 +13,26 @@ export default function SignInPage() {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+
+  // Strong password rule: 8+ chars, at least one uppercase and one lowercase.
+  const validatePassword = (value: string): string => {
+    if (value.length < 8) return 'Password must be at least 8 characters long.';
+    if (!/[A-Z]/.test(value)) return 'Password must include at least one uppercase letter (A-Z).';
+    if (!/[a-z]/.test(value)) return 'Password must include at least one lowercase letter (a-z).';
+    return '';
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    const validationMessage = validatePassword(password);
+    if (validationMessage) {
+      setPasswordError(validationMessage);
+      return;
+    }
+    setPasswordError('');
     setLoading(true);
 
     try {
@@ -73,9 +89,16 @@ export default function SignInPage() {
               type={showPass ? 'text' : 'password'}
               required
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                setPassword(value);
+                // Keep showing the inline error until the rule is satisfied.
+                if (passwordError) setPasswordError(validatePassword(value));
+              }}
               placeholder="••••••••"
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#E20001]"
+              className={`w-full px-4 py-2.5 rounded-xl border text-sm focus:outline-none focus:border-[#E20001] ${
+                passwordError ? 'border-[#E20001]' : 'border-gray-200'
+              }`}
             />
             <button
               type="button"
@@ -85,6 +108,12 @@ export default function SignInPage() {
               {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
+          <p className="text-[11px] text-gray-500 mt-1">
+            Must be 8+ characters with at least one uppercase and one lowercase letter.
+          </p>
+          {passwordError && (
+            <p className="mt-1.5 text-xs font-semibold text-[#E20001]">{passwordError}</p>
+          )}
         </div>
 
         <button

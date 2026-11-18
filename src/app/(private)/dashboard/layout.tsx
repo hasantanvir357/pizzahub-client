@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -20,15 +20,40 @@ import { AuthUser, clearAuthSession, getAuthUser } from '@/lib/auth-session';
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [user] = useState<AuthUser | null>(() => getAuthUser());
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [ready, setReady] = useState(false);
+
+  // Re-read the session so switching accounts (customer / vendor / admin)
+  // always refreshes the user card, panel badge and navigation links.
+  const syncUser = useCallback(() => {
+    setUser(getAuthUser());
+    setReady(true);
+  }, []);
+
+  // Same-tab changes dispatch `auth-change`, other tabs notify via `storage`.
+  useEffect(() => {
+    syncUser();
+    window.addEventListener('auth-change', syncUser);
+    window.addEventListener('storage', syncUser);
+    return () => {
+      window.removeEventListener('auth-change', syncUser);
+      window.removeEventListener('storage', syncUser);
+    };
+  }, [syncUser]);
+
+  // Route changes can also carry a different account (e.g. after login).
+  useEffect(() => {
+    syncUser();
+  }, [pathname, syncUser]);
 
   useEffect(() => {
-    if (!user) router.push('/sign-in');
-  }, [user, router]);
+    if (ready && !user) router.push('/sign-in');
+  }, [ready, user, router]);
 
   const handleLogout = () => {
+    // `clearAuthSession` dispatches `auth-change`, which syncs the user to
+    // null and redirects to /sign-in above.
     clearAuthSession();
-    router.push('/sign-in');
   };
 
   if (!user) {
