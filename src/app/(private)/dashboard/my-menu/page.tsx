@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { getToken } from '@/lib/auth-session';
 import { Trash2 } from 'lucide-react';
+import Image from 'next/image';
 
 interface VendorMenu {
   _id: string;
@@ -68,7 +69,14 @@ export default function MyMenuPage() {
               {items.map((item) => (
                 <tr key={item._id}>
                   <td className="px-5 py-3.5 flex items-center gap-3">
-                    <img src={item.image} alt={item.name} className="w-11 h-11 rounded-lg object-cover" />
+                    <Image
+                      src={item.image}
+                      alt={item.name}
+                      width={44}
+                      height={44}
+                      unoptimized
+                      className="w-11 h-11 rounded-lg object-cover"
+                    />
                     <span className="font-bold text-gray-900">{item.name}</span>
                   </td>
                   <td className="px-5 py-3.5 text-gray-600">{item.category}</td>
