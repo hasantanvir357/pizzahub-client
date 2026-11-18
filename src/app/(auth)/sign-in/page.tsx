@@ -6,11 +6,6 @@ import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { setAuthSession } from "@/lib/auth-session";
 
-// Inside handleSubmit after receiving `data`:
-if (data.token && data.user) {
-  setAuthSession(data.token, data.user);
-}
-
 export default function SignInPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -34,7 +29,9 @@ export default function SignInPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Invalid email or password');
 
-      if (data.token) localStorage.setItem('pizzahub_token', data.token);
+      if (data.token && data.user) {
+        setAuthSession(data.token, data.user);
+      }
       router.push('/dashboard');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Login failed');

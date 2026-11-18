@@ -6,11 +6,6 @@ import { useRouter } from 'next/navigation';
 import { User, Store, Upload, Loader2 } from 'lucide-react';
 import { setAuthSession } from "@/lib/auth-session";
 
-// Inside handleSubmit after receiving `data`:
-if (data.token && data.user) {
-  setAuthSession(data.token, data.user);
-}
-
 export default function SignUpPage() {
   const router = useRouter();
   const [role, setRole] = useState<'customer' | 'vendor'>('customer');
@@ -60,7 +55,9 @@ export default function SignUpPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Registration failed');
 
-      if (data.token) localStorage.setItem('pizzahub_token', data.token);
+      if (data.token && data.user) {
+        setAuthSession(data.token, data.user);
+      }
       router.push('/dashboard');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
