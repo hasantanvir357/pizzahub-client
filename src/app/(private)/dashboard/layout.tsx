@@ -20,16 +20,11 @@ import { AuthUser, clearAuthSession, getAuthUser } from '@/lib/auth-session';
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [user] = useState<AuthUser | null>(() => getAuthUser());
 
   useEffect(() => {
-    const currentUser = getAuthUser();
-    if (!currentUser) {
-      router.push('/sign-in');
-    } else {
-      setUser(currentUser);
-    }
-  }, [router]);
+    if (!user) router.push('/sign-in');
+  }, [user, router]);
 
   const handleLogout = () => {
     clearAuthSession();
