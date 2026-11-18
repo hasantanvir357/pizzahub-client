@@ -1,0 +1,20 @@
+@layer base {
+  :root {
+    --brand-red: #e20001;
+    --brand-red-dark: #db0007;
+    --brand-cream: #fffdfb;
+  }
+
+  body {
+    background-color: #ffffff;
+    color: #1a1a1a;
+  }
+}
+
+.pizza-glow {
+  box-shadow: 0 8px 25px -5px rgba(226, 0, 1, 0.35);
+}
+
+.pizza-glow:hover {
+  box-shadow: 0 12px 30px -4px rgba(219, 0, 7, 0.5);
+}
