@@ -4,6 +4,12 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { setAuthSession } from "@/lib/auth-session";
+
+// Inside handleSubmit after receiving `data`:
+if (data.token && data.user) {
+  setAuthSession(data.token, data.user);
+}
 
 export default function SignInPage() {
   const router = useRouter();
