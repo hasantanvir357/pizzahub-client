@@ -2,10 +2,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ShoppingCart, Leaf, Flame, Truck } from 'lucide-react';
 
-export default function HomeHighlights() {
+export function SpecialOfferBanner() {
   return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-20">
-      {/* Special Offer Banner */}
+    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
       <div className="rounded-3xl bg-linear-to-r from-[#E20001] to-[#DB0007] text-white p-8 sm:p-12 flex flex-col md:flex-row items-center justify-between gap-8 pizza-glow">
         <div className="max-w-xl space-y-4">
           <span className="inline-block px-3 py-1 rounded-full bg-white/15 text-xs font-bold uppercase tracking-wider">
@@ -32,8 +31,13 @@ export default function HomeHighlights() {
           className="w-64 h-64 sm:w-72 sm:h-72 object-cover rounded-2xl shadow-2xl border-4 border-white/20"
         />
       </div>
+    </section>
+  );
+}
 
-      {/* Why Choose PizzaHub (Clean 3-Column Feature) */}
+export function WhyChooseUs() {
+  return (
+    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
       <div className="text-center max-w-4xl mx-auto">
         <h2 className="text-3xl font-extrabold text-gray-900">Why Pizza Lovers Choose PizzaHub</h2>
         <p className="text-gray-500 text-sm sm:text-base mt-3">

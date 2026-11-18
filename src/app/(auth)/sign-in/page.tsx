@@ -1,21 +1,105 @@
+'use client';
+
+import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 
 export default function SignInPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPass, setShowPass] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Invalid email or password');
+
+      if (data.token) localStorage.setItem('pizzahub_token', data.token);
+      router.push('/dashboard');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Login failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="flex flex-col items-center justify-center text-center">
-      <span className="mb-3 text-xs font-black uppercase tracking-[0.2em] text-[#E20001]">
-        PizzaHub
-      </span>
-      <h1 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">Sign In</h1>
-      <p className="mt-3 max-w-md text-sm leading-relaxed text-gray-500">
-        This page is under construction. Please check back soon.
+    <div>
+      <div className="text-center mb-6">
+        <h1 className="text-2xl font-extrabold text-gray-900">Welcome Back</h1>
+        <p className="text-sm text-gray-500 mt-1">Sign in to order fresh pizza or manage your kitchen</p>
+      </div>
+
+      {error && (
+        <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-xs font-semibold text-[#E20001]">
+          {error}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-xs font-bold text-gray-700 mb-1.5">Email Address</label>
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@example.com"
+            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#E20001]"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-gray-700 mb-1.5">Password</label>
+          <div className="relative">
+            <input
+              type={showPass ? 'text' : 'password'}
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#E20001]"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPass(!showPass)}
+              className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+            >
+              {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full py-3 rounded-xl bg-[#E20001] hover:bg-[#DB0007] text-white font-bold text-sm pizza-glow transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+        >
+          {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+          {loading ? 'Signing In...' : 'Sign In'}
+        </button>
+      </form>
+
+      <p className="text-center text-xs text-gray-500 mt-6">
+        Don&apos;t have an account?{' '}
+        <Link href="/sign-up" className="font-bold text-[#E20001] hover:underline">
+          Create Account
+        </Link>
       </p>
-      <Link
-        href="/"
-        className="mt-6 rounded-full bg-[#E20001] px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#DB0007]"
-      >
-        Back to Home
-      </Link>
     </div>
   );
 }

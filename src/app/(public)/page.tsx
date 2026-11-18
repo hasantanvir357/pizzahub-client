@@ -1,7 +1,7 @@
 import Banner from '@/components/home/Banner';
 import Categories from '@/components/home/Categories';
+import { SpecialOfferBanner, WhyChooseUs } from '@/components/home/HomeHighlights';
 import FeaturedMenu from '@/components/home/FeaturedMenu';
-import HomeHighlights from '@/components/home/HomeHighlights';
 import GuestReviews from '@/components/home/GuestReviews';
 
 export default function HomePage() {
@@ -9,8 +9,9 @@ export default function HomePage() {
     <div>
       <Banner />
       <Categories />
+      <SpecialOfferBanner />
       <FeaturedMenu />
-      <HomeHighlights />
+      <WhyChooseUs />
       <GuestReviews />
     </div>
   );
