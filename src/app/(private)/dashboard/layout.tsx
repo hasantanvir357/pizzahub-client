@@ -10,6 +10,7 @@ import {
   UtensilsCrossed,
   Users,
   CheckSquare,
+  ShieldBan,
   UserCircle,
   LogOut,
   Pizza,
@@ -78,6 +79,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       ? [
           { label: 'Approve Menus', href: '/dashboard/manage-menu', icon: CheckSquare },
           { label: 'Manage Users', href: '/dashboard/manage-users', icon: Users },
+          { label: 'Blocked Users', href: '/dashboard/blocked-users', icon: ShieldBan },
           { label: 'All Orders', href: '/dashboard/customer-orders', icon: ShoppingBag },
         ]
       : []),
@@ -100,7 +102,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </Link>
 
           {/* User Badge */}
-          <div className="p-3.5 rounded-2xl bg-red-50/70 border border-red-100 mb-6">
+          <div className="p-3.5 rounded-2xl bg-red-50/70 border border-red-100 mb-6 transition-all duration-300 ease-out hover:shadow-sm hover:border-red-200">
             <p className="text-sm font-bold text-gray-900 truncate">{user.name}</p>
             <p className="text-xs text-gray-500 truncate">{user.email}</p>
             <span className="inline-block mt-2 px-2.5 py-0.5 rounded-full bg-[#E20001] text-white text-[10px] font-bold uppercase tracking-wider">
@@ -117,8 +119,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                    active ? 'bg-[#E20001] text-white shadow-xs' : 'text-gray-600 hover:bg-red-50 hover:text-[#E20001]'
+                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ease-out ${
+                    active
+                      ? 'bg-[#E20001] text-white shadow-xs'
+                      : 'text-gray-600 hover:bg-red-50 hover:text-[#E20001] hover:shadow-sm'
                   }`}
                 >
                   <Icon className="w-4 h-4" />
@@ -133,13 +137,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="pt-6 mt-6 border-t border-gray-100 space-y-2">
           <Link
             href="/"
-            className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-xs font-bold text-gray-600 hover:bg-gray-50"
+            className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-xs font-bold text-gray-600 hover:bg-gray-50 transition-all duration-300 ease-out"
           >
             <Home className="w-4 h-4" /> Back to Website
           </Link>
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3.5 py-2 rounded-xl text-xs font-bold text-[#E20001] hover:bg-red-50"
+            className="w-full flex items-center gap-3 px-3.5 py-2 rounded-xl text-xs font-bold text-[#E20001] hover:bg-red-50 transition-all duration-300 ease-out"
           >
             <LogOut className="w-4 h-4" /> Logout
           </button>

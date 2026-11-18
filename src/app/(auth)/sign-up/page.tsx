@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { User, Store, Upload, Loader2 } from 'lucide-react';
@@ -17,6 +17,13 @@ export default function SignUpPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+
+  // Never carry details over from a previous session.
+  useEffect(() => {
+    setName('');
+    setEmail('');
+    setPassword('');
+  }, []);
 
   // Strong password rule: 8+ chars, at least one uppercase and one lowercase.
   const validatePassword = (value: string): string => {
@@ -123,7 +130,7 @@ export default function SignUpPage() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-3.5">
+      <form onSubmit={handleSubmit} className="space-y-3.5" autoComplete="off">
         <div>
           <label className="block text-xs font-bold text-gray-700 mb-1">Full Name</label>
           <input
@@ -131,7 +138,7 @@ export default function SignUpPage() {
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Tanvir Hasan"
+            placeholder="Your Name"
             className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#E20001]"
           />
         </div>
@@ -155,6 +162,7 @@ export default function SignUpPage() {
           <input
             type="email"
             required
+            autoComplete="off"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
@@ -167,6 +175,7 @@ export default function SignUpPage() {
           <input
             type="password"
             required
+            autoComplete="new-password"
             value={password}
             onChange={(e) => {
               const value = e.target.value;

@@ -35,7 +35,8 @@ export function getAuthUser(): AuthUser | null {
 export function clearAuthSession() {
   if (typeof document === 'undefined') return;
   document.cookie = 'pizzahub_token=; path=/; max-age=0';
-  localStorage.removeItem('pizzahub_token');
-  localStorage.removeItem('pizzahub_user');
+  // Wipe every client-side store so no credentials or session data survive logout.
+  localStorage.clear();
+  sessionStorage.clear();
   window.dispatchEvent(new Event('auth-change'));
 }

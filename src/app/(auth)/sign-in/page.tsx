@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
@@ -14,6 +14,12 @@ export default function SignInPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+
+  // Never carry credentials over from a previous session.
+  useEffect(() => {
+    setEmail('');
+    setPassword('');
+  }, []);
 
   // Strong password rule: 8+ chars, at least one uppercase and one lowercase.
   const validatePassword = (value: string): string => {
@@ -69,12 +75,13 @@ export default function SignInPage() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
         <div>
           <label className="block text-xs font-bold text-gray-700 mb-1.5">Email Address</label>
           <input
             type="email"
             required
+            autoComplete="off"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
@@ -88,6 +95,7 @@ export default function SignInPage() {
             <input
               type={showPass ? 'text' : 'password'}
               required
+              autoComplete="new-password"
               value={password}
               onChange={(e) => {
                 const value = e.target.value;
