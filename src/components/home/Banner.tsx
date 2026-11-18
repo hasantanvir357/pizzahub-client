@@ -14,7 +14,7 @@ export default function Banner() {
           backgroundImage: `url('https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=2070&auto=format&fit=crop')`,
         }}
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/65 to-black/85" />
+      <div className="absolute inset-0 bg-linear-to-b from-black/75 via-black/65 to-black/85" />
 
       {/* Content */}
       <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white py-20">
