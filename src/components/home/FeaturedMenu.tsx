@@ -41,7 +41,7 @@ export default function FeaturedMenu() {
             <span className="text-xs font-bold uppercase tracking-widest text-[#E20001]">
               Our Menu
             </span>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mt-1">
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mt-1 animate-from-left">
               Popular Handcrafted Pizzas
             </h2>
           </div>
@@ -61,8 +61,8 @@ export default function FeaturedMenu() {
           </div>
         ) : items.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {items.slice(0, 6).map((item) => (
-              <MenuCard key={item._id} item={item} />
+            {items.slice(0, 6).map((item, index) => (
+              <MenuCard key={item._id} item={item} index={index} />
             ))}
           </div>
         ) : (

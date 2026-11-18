@@ -15,7 +15,7 @@ export function SpecialOfferBanner() {
         viewport={{ once: true, amount: 0.15 }}
         transition={{ duration: 0.5, ease: 'easeOut' }}
       >
-        <div className="max-w-xl space-y-4">
+        <div className="max-w-xl space-y-4 animate-from-left">
           <span className="inline-block px-3 py-1 rounded-full bg-white/15 text-xs font-bold uppercase tracking-wider">
             Weekend Special Offer
           </span>
@@ -37,7 +37,7 @@ export function SpecialOfferBanner() {
           width={600}
           height={600}
           unoptimized
-          className="w-64 h-64 sm:w-72 sm:h-72 object-cover rounded-2xl shadow-2xl border-4 border-white/20"
+          className="w-64 h-64 sm:w-72 sm:h-72 object-cover rounded-2xl shadow-2xl border-4 border-white/20 animate-from-right"
         />
       </motion.div>
     </section>
@@ -54,7 +54,7 @@ export function WhyChooseUs() {
         viewport={{ once: true, amount: 0.15 }}
         transition={{ duration: 0.5, ease: 'easeOut' }}
       >
-        <h2 className="text-3xl font-extrabold text-gray-900">Why Pizza Lovers Choose PizzaHub</h2>
+        <h2 className="text-3xl font-extrabold text-gray-900 animate-from-left">Why Pizza Lovers Choose PizzaHub</h2>
         <p className="text-gray-500 text-sm sm:text-base mt-3">
           From hand-tossed dough to stone-oven baking, every partner restaurant follows authentic quality standards.
         </p>

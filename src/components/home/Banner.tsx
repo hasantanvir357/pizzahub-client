@@ -9,7 +9,7 @@ export default function Banner() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
       <section className="relative w-full min-h-[82vh] flex items-center justify-center overflow-hidden rounded-3xl bg-gray-950">
         <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat scale-105"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat scale-105 animate-from-right"
           style={{
             backgroundImage: `url('https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=2070&auto=format&fit=crop')`,
           }}
@@ -17,7 +17,7 @@ export default function Banner() {
         <div className="absolute inset-0 bg-linear-to-b from-black/75 via-black/65 to-black/85" />
 
         {/* Content */}
-        <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white py-20">
+        <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white py-20 animate-from-left">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

@@ -82,7 +82,7 @@ export default function BrowseMenuPage() {
       {/* Top Red Offer Banner */}
       {activeOffer && (
         <div
-          className="mb-10 rounded-3xl overflow-hidden shadow-lg"
+          className="mb-10 rounded-3xl overflow-hidden shadow-lg animate-from-top"
           style={{ background: 'linear-gradient(135deg, #E20001 0%, #B80001 100%)' }}
         >
           <div className="flex flex-col sm:flex-row items-center gap-6 p-6 sm:p-8">
@@ -178,7 +178,7 @@ export default function BrowseMenuPage() {
       {/* Page Header */}
       <div className="text-center max-w-2xl mx-auto mb-10">
         <span className="text-xs font-bold uppercase tracking-widest text-[#E20001]">Fresh From The Oven</span>
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mt-1">Explore Our Full Menu</h1>
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mt-1 animate-from-left">Explore Our Full Menu</h1>
         <p className="text-sm text-gray-500 mt-2">
           Search by pizza name, filter by your favorite category, or sort by price.
         </p>
@@ -241,8 +241,8 @@ export default function BrowseMenuPage() {
         </div>
       ) : items.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {items.map((item) => (
-            <MenuCard key={item._id} item={item} />
+          {items.map((item, index) => (
+            <MenuCard key={item._id} item={item} index={index} />
           ))}
         </div>
       ) : (

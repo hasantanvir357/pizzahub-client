@@ -1,5 +1,9 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { getAuthUser, AuthUser } from '@/lib/auth-session';
 
 export interface MenuItem {
   _id: string;
@@ -16,9 +20,23 @@ export interface MenuItem {
   discountLabel?: string;
 }
 
-export default function MenuCard({ item }: { item: MenuItem }) {
+export default function MenuCard({ item, index = 0 }: { item: MenuItem; index?: number }) {
+  const [user, setUser] = useState<AuthUser | null>(null);
+
+  useEffect(() => {
+    const syncUser = () => setUser(getAuthUser());
+    syncUser();
+    window.addEventListener('auth-change', syncUser);
+    return () => window.removeEventListener('auth-change', syncUser);
+  }, []);
+
+  const isVendorOrAdmin = user?.role === 'vendor' || user?.role === 'admin';
+
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-xs hover:shadow-lg transition-all overflow-hidden flex flex-col">
+    <div
+      style={{ animationDelay: `${index * 70}ms` }}
+      className="bg-white rounded-2xl border border-gray-100 shadow-xs hover:shadow-xl hover:-translate-y-2 hover:border-[#E20001]/35 transition-all duration-300 overflow-hidden flex flex-col animate-from-bottom"
+    >
       {/* Image & Badge */}
       <div className="relative h-52 w-full bg-gray-100 overflow-hidden">
         <Image
@@ -63,12 +81,21 @@ export default function MenuCard({ item }: { item: MenuItem }) {
             <span className="text-xs text-gray-400">from </span>
             <span className="text-lg font-extrabold text-gray-900">${item.price.toFixed(2)}</span>
           </div>
-          <Link
-            href={`/menu/${item._id}`}
-            className="px-4 py-2 rounded-lg bg-[#E20001] hover:bg-[#DB0007] text-white text-xs font-bold transition-colors"
-          >
-            Order Now
-          </Link>
+          {isVendorOrAdmin ? (
+            <Link
+              href={`/menu/${item._id}`}
+              className="px-4 py-2 rounded-lg bg-[#E20001] hover:bg-[#DB0007] text-white text-xs font-bold transition-colors"
+            >
+              View Details
+            </Link>
+          ) : (
+            <Link
+              href={`/menu/${item._id}`}
+              className="px-4 py-2 rounded-lg bg-[#E20001] hover:bg-[#DB0007] text-white text-xs font-bold transition-colors"
+            >
+              Order Now
+            </Link>
+          )}
         </div>
       </div>
     </div>

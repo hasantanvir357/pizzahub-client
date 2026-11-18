@@ -42,7 +42,8 @@ export default function MyOrdersPage() {
       });
       if (res.ok) {
         const data = await res.json();
-        setOrders(data.orders || []);
+        // Cancelled orders are hidden from the customer's order list.
+        setOrders((data.orders || []).filter((o: OrderItem) => o.status !== 'cancelled'));
       }
       setLoading(false);
     };
@@ -104,13 +105,8 @@ export default function MyOrdersPage() {
         throw new Error(data.message || 'Failed to cancel order');
       }
 
-      setOrders((prev) =>
-        prev.map((order) =>
-          order._id === cancelTarget._id
-            ? { ...order, status: 'cancelled', cancelReason: finalReason }
-            : order
-        )
-      );
+      // Cancelled orders are removed from the list immediately.
+      setOrders((prev) => prev.filter((order) => order._id !== cancelTarget._id));
       closeCancelModal();
     } catch (err) {
       setModalError(err instanceof Error ? err.message : 'Failed to cancel order');

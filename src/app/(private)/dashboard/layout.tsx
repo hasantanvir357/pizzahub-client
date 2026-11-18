@@ -89,7 +89,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="min-h-screen bg-[#FFFDFB] flex flex-col md:flex-row">
       {/* Sidebar */}
-      <aside className="w-full md:w-64 bg-white border-b md:border-b-0 md:border-r border-red-100 flex flex-col justify-between p-5">
+      <aside
+        key={pathname}
+        className="w-full md:w-64 bg-white border-b md:border-b-0 md:border-r border-red-100 flex flex-col justify-between p-5 animate-from-left"
+      >
         <div>
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 mb-6">
@@ -151,7 +154,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-5 sm:p-8 max-w-6xl">{children}</main>
+      <main key={pathname} className="flex-1 p-5 sm:p-8 max-w-6xl animate-from-right">
+        {children}
+      </main>
     </div>
   );
 }

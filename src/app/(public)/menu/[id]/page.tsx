@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { MenuItem } from '@/components/shared/MenuCard';
-import { getToken } from '@/lib/auth-session';
+import { getToken, getAuthUser, AuthUser } from '@/lib/auth-session';
 import { ArrowLeft, CheckCircle2, Loader2, ShoppingBag, Store } from 'lucide-react';
 import Link from 'next/link';
 
@@ -21,6 +21,16 @@ export default function MenuDetailsPage() {
   const [paymentMethod, setPaymentMethod] = useState('Cash on Delivery');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [user, setUser] = useState<AuthUser | null>(null);
+
+  useEffect(() => {
+    const syncUser = () => setUser(getAuthUser());
+    syncUser();
+    window.addEventListener('auth-change', syncUser);
+    return () => window.removeEventListener('auth-change', syncUser);
+  }, []);
+
+  const isVendorOrAdmin = user?.role === 'vendor' || user?.role === 'admin';
 
   useEffect(() => {
     const fetchItem = async () => {
@@ -42,6 +52,7 @@ export default function MenuDetailsPage() {
 
   const handleOrder = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isVendorOrAdmin) return;
     setError('');
 
     const token = getToken();
@@ -168,6 +179,12 @@ export default function MenuDetailsPage() {
             </div>
           )}
 
+          {isVendorOrAdmin && (
+            <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs font-bold text-[#E20001]">
+              Vendor and Admin accounts cannot place orders. Please sign in with a Customer account.
+            </div>
+          )}
+
           {/* Size Selection */}
           <div>
             <label className="block text-xs font-bold text-gray-700 mb-2">Select Size</label>
@@ -241,14 +258,16 @@ export default function MenuDetailsPage() {
             </select>
           </div>
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full py-3.5 rounded-xl bg-[#E20001] hover:bg-[#DB0007] text-white font-bold text-sm pizza-glow transition-all flex items-center justify-center gap-2 disabled:opacity-60"
-          >
-            {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShoppingBag className="w-4 h-4" />}
-            {submitting ? 'Placing Order...' : `Confirm Order • $${totalPrice}`}
-          </button>
+          {!isVendorOrAdmin && (
+            <button
+              type="submit"
+              disabled={submitting}
+              className="w-full py-3.5 rounded-xl bg-[#E20001] hover:bg-[#DB0007] text-white font-bold text-sm pizza-glow transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+            >
+              {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShoppingBag className="w-4 h-4" />}
+              {submitting ? 'Placing Order...' : `Confirm Order • $${totalPrice}`}
+            </button>
+          )}
         </form>
       </div>
     </div>
