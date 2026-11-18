@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'PizzaHub - Hot & Fresh Pizza Delivery',
+  title: 'PizzaHub | Hot & Fresh Artisan Pizza Delivery',
   description: 'Multi-vendor pizza ordering platform',
 };
 

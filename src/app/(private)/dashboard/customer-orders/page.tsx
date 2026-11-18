@@ -36,7 +36,7 @@ export default function CustomerOrdersPage() {
 
   const updateStatus = async (id: string, status: string) => {
     const token = getToken();
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orders/${id}/status`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orders/${id}/status`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -44,8 +44,17 @@ export default function CustomerOrdersPage() {
       },
       body: JSON.stringify({ status }),
     });
-    setOrders((prev) => prev.map((o) => (o._id === id ? { ...o, status } : o)));
+    if (!res.ok) return;
+    setOrders((prev) =>
+      status === "cancelled"
+        ? // Cancelled orders leave the active table right away.
+          prev.filter((o) => o._id !== id)
+        : prev.map((o) => (o._id === id ? { ...o, status } : o))
+    );
   };
+
+  // Active table never shows cancelled orders (they stay in Overview history).
+  const activeOrders = orders.filter((o) => o.status !== "cancelled");
 
   return (
     <div>
@@ -53,7 +62,7 @@ export default function CustomerOrdersPage() {
 
       {loading ? (
         <div className="h-48 rounded-2xl bg-gray-100 animate-pulse" />
-      ) : orders.length === 0 ? (
+      ) : activeOrders.length === 0 ? (
         <p className="text-sm text-gray-500">No incoming orders yet.</p>
       ) : (
         <div className="bg-white rounded-2xl border border-gray-100 overflow-x-auto">
@@ -67,7 +76,7 @@ export default function CustomerOrdersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {orders.map((o) => (
+              {activeOrders.map((o) => (
                 <tr key={o._id}>
                   <td className="px-5 py-3.5">
                     <p className="font-bold text-gray-900">{o.pizzaName}</p>

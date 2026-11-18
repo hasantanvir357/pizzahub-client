@@ -11,6 +11,9 @@ export interface MenuItem {
   restaurantName?: string;
   toppings?: string[];
   isPopular?: boolean;
+  isOffer?: boolean;
+  originalPrice?: number;
+  discountLabel?: string;
 }
 
 export default function MenuCard({ item }: { item: MenuItem }) {

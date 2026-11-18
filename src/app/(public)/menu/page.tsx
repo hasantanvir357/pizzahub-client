@@ -1,9 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import MenuCard, { MenuItem } from '@/components/shared/MenuCard';
-import { Search, SlidersHorizontal } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, SlidersHorizontal } from 'lucide-react';
 
 const CATEGORIES = ['All', 'Classic Pizza', 'Meat Lovers', 'Veggie Delight', 'Sides & Drinks'];
 
@@ -12,10 +14,43 @@ export default function BrowseMenuPage() {
   const initialCategory = searchParams.get('category') || 'All';
 
   const [items, setItems] = useState<MenuItem[]>([]);
+  const [offers, setOffers] = useState<MenuItem[]>([]);
+  const [activeOfferIndex, setActiveOfferIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState(initialCategory);
   const [sortBy, setSortBy] = useState('default');
+
+  // Offers are fetched once so the banner stays stable while the grid filters.
+  useEffect(() => {
+    let ignore = false;
+    const fetchOffers = async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/menu`);
+        if (res.ok) {
+          const data = await res.json();
+          const all: MenuItem[] = data.items || data || [];
+          if (!ignore) setOffers(all.filter((item) => item.isOffer === true));
+        }
+      } catch {
+        if (!ignore) setOffers([]);
+      }
+    };
+    fetchOffers();
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  const showPrevOffer = () =>
+    setActiveOfferIndex((prev) => (prev - 1 + offers.length) % offers.length);
+  const showNextOffer = () => setActiveOfferIndex((prev) => (prev + 1) % offers.length);
+
+  const activeOffer = offers[activeOfferIndex] ?? offers[0];
+  const discountPercent =
+    activeOffer?.originalPrice && activeOffer.originalPrice > activeOffer.price
+      ? Math.round((1 - activeOffer.price / activeOffer.originalPrice) * 100)
+      : null;
 
   useEffect(() => {
     const fetchMenus = async () => {
@@ -44,6 +79,102 @@ export default function BrowseMenuPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      {/* Top Red Offer Banner */}
+      {activeOffer && (
+        <div
+          className="mb-10 rounded-3xl overflow-hidden shadow-lg"
+          style={{ background: 'linear-gradient(135deg, #E20001 0%, #B80001 100%)' }}
+        >
+          <div className="flex flex-col sm:flex-row items-center gap-6 p-6 sm:p-8">
+            {/* Offer Copy */}
+            <div className="flex-1 text-white min-w-0">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="px-3 py-1 rounded-full bg-white text-[#E20001] text-[11px] font-extrabold uppercase tracking-wider shadow-xs">
+                  {activeOffer.discountLabel ||
+                    (discountPercent ? `${discountPercent}% OFF` : 'Special Offer')}
+                </span>
+                <span className="text-[11px] font-bold uppercase tracking-widest text-white/80">
+                  Today&apos;s Hot Deal
+                </span>
+              </div>
+
+              <h2 className="text-2xl sm:text-3xl font-extrabold mt-3 leading-tight">
+                {activeOffer.name}
+              </h2>
+              <p className="text-sm text-white/85 mt-2 max-w-xl">{activeOffer.description}</p>
+
+              <div className="flex items-baseline gap-3 mt-4">
+                <span className="text-3xl font-extrabold">
+                  ${activeOffer.price.toFixed(2)}
+                </span>
+                {activeOffer.originalPrice && activeOffer.originalPrice > activeOffer.price && (
+                  <span className="text-lg font-bold text-white/70 line-through">
+                    ${activeOffer.originalPrice.toFixed(2)}
+                  </span>
+                )}
+              </div>
+
+              {/* Order Now + Offer Switcher */}
+              <div className="flex flex-wrap items-center gap-4 mt-5">
+                <Link
+                  href={`/menu/${activeOffer._id}`}
+                  className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-white text-[#E20001] text-sm font-bold transition-all duration-300 ease-out hover:shadow-lg hover:bg-gray-50"
+                >
+                  Order Now
+                </Link>
+
+                {offers.length > 1 && (
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={showPrevOffer}
+                      aria-label="Previous offer"
+                      className="w-9 h-9 rounded-full border border-white/40 flex items-center justify-center text-white transition-all duration-300 ease-out hover:bg-white/15"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+
+                    <div className="flex items-center gap-2">
+                      {offers.map((offer, index) => (
+                        <button
+                          key={offer._id}
+                          type="button"
+                          onClick={() => setActiveOfferIndex(index)}
+                          aria-label={`Show offer ${index + 1}`}
+                          className={`h-2 rounded-full transition-all duration-300 ease-out ${
+                            index === activeOfferIndex ? 'w-6 bg-white' : 'w-2 bg-white/50 hover:bg-white/80'
+                          }`}
+                        />
+                      ))}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={showNextOffer}
+                      aria-label="Next offer"
+                      className="w-9 h-9 rounded-full border border-white/40 flex items-center justify-center text-white transition-all duration-300 ease-out hover:bg-white/15"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Offer Image */}
+            <div className="relative w-full sm:w-64 h-44 sm:h-44 shrink-0 rounded-2xl overflow-hidden ring-2 ring-white/40">
+              <Image
+                src={activeOffer.image}
+                alt={activeOffer.name}
+                fill
+                sizes="(max-width: 640px) 100vw, 256px"
+                className="object-cover"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Page Header */}
       <div className="text-center max-w-2xl mx-auto mb-10">
         <span className="text-xs font-bold uppercase tracking-widest text-[#E20001]">Fresh From The Oven</span>

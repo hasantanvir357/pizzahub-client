@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { X } from 'lucide-react';
 import { getToken } from '@/lib/auth-session';
 
 interface OrderItem {
@@ -11,11 +12,27 @@ interface OrderItem {
   quantity: number;
   totalPrice: number;
   status: string;
+  cancelReason?: string;
 }
+
+const CANCEL_REASONS = [
+  'Ordered by mistake',
+  'Changed delivery address',
+  'Delivery time too long',
+  'Other',
+];
 
 export default function MyOrdersPage() {
   const [orders, setOrders] = useState<OrderItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Cancel modal state
+  const [cancelTarget, setCancelTarget] = useState<OrderItem | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelNote, setCancelNote] = useState('');
+  const [confirmChecked, setConfirmChecked] = useState(false);
+  const [modalError, setModalError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -31,6 +48,76 @@ export default function MyOrdersPage() {
     };
     fetchOrders();
   }, []);
+
+  // Close the modal with Escape.
+  useEffect(() => {
+    if (!cancelTarget) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setCancelTarget(null);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [cancelTarget]);
+
+  const openCancelModal = (order: OrderItem) => {
+    setCancelTarget(order);
+    setCancelReason('');
+    setCancelNote('');
+    setConfirmChecked(false);
+    setModalError('');
+  };
+
+  const closeCancelModal = () => {
+    setCancelTarget(null);
+    setModalError('');
+  };
+
+  const handleCancelSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!cancelTarget) return;
+
+    if (!cancelReason) {
+      setModalError('Please select a reason for cancelling this order.');
+      return;
+    }
+    if (!confirmChecked) {
+      setModalError('Please confirm that you want to cancel this order.');
+      return;
+    }
+
+    setSubmitting(true);
+    setModalError('');
+
+    try {
+      const finalReason = cancelNote.trim() ? `${cancelReason} — ${cancelNote.trim()}` : cancelReason;
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orders/${cancelTarget._id}/cancel`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${getToken()}`,
+        },
+        body: JSON.stringify({ cancelReason: finalReason }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({} as { message?: string }));
+        throw new Error(data.message || 'Failed to cancel order');
+      }
+
+      setOrders((prev) =>
+        prev.map((order) =>
+          order._id === cancelTarget._id
+            ? { ...order, status: 'cancelled', cancelReason: finalReason }
+            : order
+        )
+      );
+      closeCancelModal();
+    } catch (err) {
+      setModalError(err instanceof Error ? err.message : 'Failed to cancel order');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div>
@@ -54,7 +141,7 @@ export default function MyOrdersPage() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {orders.map((o) => (
-                <tr key={o._id}>
+                <tr key={o._id} className="transition-all duration-300 ease-out hover:bg-red-50/40">
                   <td className="px-5 py-3.5 font-bold text-gray-900">{o.pizzaName}</td>
                   <td className="px-5 py-3.5 text-gray-600">{o.restaurantName}</td>
                   <td className="px-5 py-3.5 text-gray-600">
@@ -62,14 +149,131 @@ export default function MyOrdersPage() {
                   </td>
                   <td className="px-5 py-3.5 font-bold text-[#E20001]">${o.totalPrice}</td>
                   <td className="px-5 py-3.5">
-                    <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-red-50 text-[#E20001] capitalize">
-                      {o.status}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-red-50 text-[#E20001] capitalize">
+                        {o.status}
+                      </span>
+                      {o.status === 'pending' && (
+                        <button
+                          type="button"
+                          onClick={() => openCancelModal(o)}
+                          className="rounded-lg border border-[#E20001] px-2.5 py-1 text-[11px] font-bold text-[#E20001] transition-all duration-300 ease-out hover:bg-[#E20001] hover:text-white"
+                        >
+                          Cancel Order
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Cancellation Check Modal */}
+      {cancelTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+          onClick={closeCancelModal}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="cancel-order-title"
+        >
+          <div
+            className="w-full max-w-md bg-white rounded-2xl p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 id="cancel-order-title" className="text-lg font-extrabold text-gray-900">
+                  Cancel Order
+                </h2>
+                <p className="text-xs text-gray-500 mt-1">
+                  {cancelTarget.pizzaName} · {cancelTarget.restaurantName}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeCancelModal}
+                aria-label="Close"
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCancelSubmit} className="mt-5 space-y-4">
+              {/* Reason */}
+              <div>
+                <label htmlFor="cancel-reason" className="block text-xs font-bold text-gray-700 mb-1">
+                  Why are you cancelling? *
+                </label>
+                <select
+                  id="cancel-reason"
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:border-[#E20001]"
+                >
+                  <option value="">Select a reason</option>
+                  {CANCEL_REASONS.map((reason) => (
+                    <option key={reason} value={reason}>
+                      {reason}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Optional Note */}
+              <div>
+                <label htmlFor="cancel-note" className="block text-xs font-bold text-gray-700 mb-1">
+                  Additional note (optional)
+                </label>
+                <textarea
+                  id="cancel-note"
+                  rows={3}
+                  value={cancelNote}
+                  onChange={(e) => setCancelNote(e.target.value)}
+                  placeholder="Anything else we should know?"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#E20001] resize-none"
+                />
+              </div>
+
+              {/* Confirmation */}
+              <label className="flex items-start gap-2.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={confirmChecked}
+                  onChange={(e) => setConfirmChecked(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 accent-[#E20001]"
+                />
+                <span className="text-xs text-gray-600">
+                  I understand this order cannot be recovered once cancelled.
+                </span>
+              </label>
+
+              {modalError && (
+                <p className="text-xs font-semibold text-[#E20001]">{modalError}</p>
+              )}
+
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={closeCancelModal}
+                  className="flex-1 py-2.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-600 transition-all duration-300 ease-out hover:bg-gray-50"
+                >
+                  Keep Order
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="flex-1 py-2.5 rounded-xl bg-[#E20001] hover:bg-[#DB0007] text-white text-xs font-bold transition-all duration-300 ease-out disabled:opacity-60"
+                >
+                  {submitting ? 'Cancelling...' : 'Cancel Order'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
