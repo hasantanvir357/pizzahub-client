@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, Heart } from 'lucide-react';
 import { getAuthUser, AuthUser } from '@/lib/auth-session';
+import { useCart } from '@/context/CartContext';
 import { toast } from 'sonner';
 
 const FAVORITES_KEY = 'pizzahub_favorites';
@@ -27,6 +28,7 @@ export interface MenuItem {
 export default function MenuCard({ item, index = 0 }: { item: MenuItem; index?: number }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [favorite, setFavorite] = useState(false);
+  const { addItem } = useCart();
 
   useEffect(() => {
     const syncUser = () => setUser(getAuthUser());
@@ -72,6 +74,18 @@ export default function MenuCard({ item, index = 0 }: { item: MenuItem; index?: 
   };
 
   const isVendorOrAdmin = user?.role === 'vendor' || user?.role === 'admin';
+
+  const handleAddToCart = () => {
+    addItem({
+      menuItemId: item._id,
+      name: item.name,
+      image: item.image,
+      price: item.price,
+      size: 'Regular',
+      restaurantName: item.restaurantName,
+    });
+    toast.success(`${item.name} added to cart`);
+  };
 
   return (
     <div
@@ -147,13 +161,22 @@ export default function MenuCard({ item, index = 0 }: { item: MenuItem; index?: 
               <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" />
             </Link>
           ) : (
-            <Link
+            <>
+              <button
+                type="button"
+                onClick={handleAddToCart}
+                className="group inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-white border border-[#E2001] hover:bg-red-50 text-[#E2001] hover:text-[#DB0007] text-xs font-bold transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-lg"
+              >
+                Add to Cart
+              </button>
+              <Link
               href={`/menu/${item._id}`}
               className="group inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#E20001] hover:bg-[#DB0007] text-white text-xs font-bold transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-lg"
             >
               Order Now
               <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" />
-            </Link>
+              </Link>
+            </>
           )}
         </div>
       </div>

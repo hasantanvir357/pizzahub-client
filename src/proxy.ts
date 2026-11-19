@@ -10,9 +10,9 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/sign-in', request.url));
   }
 
-  // Redirect logged-in users away from sign-in/sign-up
+  // Redirect logged-in users away from sign-in/sign-up to the home page.
   if ((pathname === '/sign-in' || pathname === '/sign-up') && token) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    return NextResponse.redirect(new URL('/', request.url));
   }
 
   return NextResponse.next();

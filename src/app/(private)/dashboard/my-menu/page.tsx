@@ -1,10 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getToken } from '@/lib/auth-session';
+import { getAuthUser, getToken, AuthUser } from '@/lib/auth-session';
 import { Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import { toast } from 'sonner';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+
+const FREE_PLAN_MENU_ITEM_LIMIT = 3;
+const FREE_PLAN_LIMIT_WARNING =
+  'You have reached the Free plan limit (3/3 items). Upgrade to Premium for unlimited menu items.';
 
 interface VendorMenu {
   _id: string;
@@ -18,6 +24,17 @@ interface VendorMenu {
 export default function MyMenuPage() {
   const [items, setItems] = useState<VendorMenu[]>([]);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<AuthUser | null>(null);
+
+  useEffect(() => {
+    const syncUser = () => setUser(getAuthUser());
+    syncUser();
+    window.addEventListener('auth-change', syncUser);
+    return () => window.removeEventListener('auth-change', syncUser);
+  }, []);
+
+  const isFreePlanVendor = user?.role === 'vendor' && user?.plan !== 'premium';
+  const showFreePlanLimit = isFreePlanVendor && items.length >= FREE_PLAN_MENU_ITEM_LIMIT;
 
   useEffect(() => {
     let ignore = false;
@@ -37,6 +54,14 @@ export default function MyMenuPage() {
     };
   }, []);
 
+  // Surface the Free plan limit warning once the vendor is on the free plan
+  // and has accumulated the maximum allowed menu items.
+  useEffect(() => {
+    if (showFreePlanLimit) {
+      toast.warning(FREE_PLAN_LIMIT_WARNING);
+    }
+  }, [showFreePlanLimit]);
+
   const handleDelete = async (id: string) => {
     const token = getToken();
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/menu/${id}`, {
@@ -54,6 +79,24 @@ export default function MyMenuPage() {
   return (
     <div>
       <h1 className="text-2xl font-extrabold text-gray-900 mb-6">My Menu Items</h1>
+
+      {showFreePlanLimit && (
+        <Card className="mb-6 overflow-hidden border-amber-200 bg-amber-50">
+          <CardContent className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5">
+            <p className="text-sm font-bold text-amber-800">{FREE_PLAN_LIMIT_WARNING}</p>
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => {
+                window.location.href = '/dashboard/subscription';
+              }}
+              className="rounded-xl bg-[#E20001] hover:bg-[#DB0007] text-white text-xs font-bold"
+            >
+              Upgrade to Premium
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {loading ? (
         <div className="h-48 rounded-2xl bg-gray-100 animate-pulse" />

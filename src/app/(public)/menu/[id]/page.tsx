@@ -17,6 +17,7 @@ import {
   User as UserIcon,
 } from 'lucide-react';
 import { getAuthUser, getToken, AuthUser } from '@/lib/auth-session';
+import { useCart } from '@/context/CartContext';
 import { toast } from 'sonner';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -73,6 +74,7 @@ const SIZE_MULTIPLIERS: Record<'Regular' | 'Medium' | 'Large', number> = {
 export default function MenuDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { addItem } = useCart();
 
   const [item, setItem] = useState<MenuItem | null>(null);
   const [loading, setLoading] = useState(true);
@@ -213,6 +215,19 @@ export default function MenuDetailsPage() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleAddToCart = () => {
+    addItem({
+      menuItemId: item._id,
+      name: item.name,
+      image: item.image,
+      price: unitPrice,
+      size,
+      toppings: item.toppings,
+      restaurantName: item.restaurantName,
+    }, quantity);
+    toast.success(`${item.name} added to cart`);
   };
 
   const handleSubmitReview = async (e: React.FormEvent) => {
@@ -543,6 +558,15 @@ export default function MenuDetailsPage() {
               </AnimatePresence>
 
               {error && <p className="text-xs font-semibold text-[#E20001]">{error}</p>}
+
+              <button
+                type="button"
+                onClick={handleAddToCart}
+                disabled={submitting}
+                className="w-full py-3 rounded-xl border border-[#E2001] hover:bg-red-50 text-[#E2001] hover:text-[#DB0007] font-bold text-sm transition-colors disabled:opacity-60"
+              >
+                Add to Cart
+              </button>
 
               <button
                 type="submit"

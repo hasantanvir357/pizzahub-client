@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { User, Store, Upload, Loader2 } from 'lucide-react';
-import { setAuthSession } from "@/lib/auth-session";
+import { getAuthUser, setAuthSession } from "@/lib/auth-session";
 import { authClient } from "@/lib/auth-client";
 import { toast } from 'sonner';
 
@@ -30,7 +30,7 @@ export default function SignUpPage() {
 
   // Once better-auth redirects back from Google (?google=success), sync the
   // Google profile (including the selected role) with the PizzaHub backend so
-  // the backend JWT + user role are saved, then continue to /dashboard.
+  // the backend JWT + user role are saved, then continue to the home page.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
 
@@ -53,6 +53,26 @@ export default function SignUpPage() {
           throw new Error(sessionError?.message || 'Google session not found. Please try again.');
         }
 
+        // Read the pending Google sign-up intent (role + restaurant) before
+        // syncing the OAuth profile with the PizzaHub backend.
+        let oauthRole: 'customer' | 'vendor' | 'admin' = 'customer';
+        let oauthRestaurantName: string | undefined;
+        const storedRaw = sessionStorage.getItem('pizzahub_oauth_signup');
+        if (storedRaw) {
+          try {
+            const parsed = JSON.parse(storedRaw);
+            if (parsed?.role) oauthRole = parsed.role;
+            if (parsed?.restaurantName) oauthRestaurantName = parsed.restaurantName;
+          } catch {
+            // Ignore malformed intent payloads.
+          }
+          sessionStorage.removeItem('pizzahub_oauth_signup');
+        }
+
+        const currentUser = getAuthUser();
+        const role = oauthRole || currentUser?.role || 'customer';
+        const restaurantName = oauthRestaurantName || currentUser?.restaurantName || undefined;
+
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/google`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -62,6 +82,7 @@ export default function SignUpPage() {
             name: session.user.name,
             image: session.user.image ?? undefined,
             role,
+            restaurantName,
           }),
         });
 
@@ -73,7 +94,7 @@ export default function SignUpPage() {
         }
         if (cancelled) return;
         toast.success('Account ready! Redirecting...');
-        router.replace('/dashboard');
+        router.replace('/');
       } catch (err: unknown) {
         if (cancelled) return;
         const message = err instanceof Error ? err.message : 'Google sign-up failed';
@@ -86,13 +107,21 @@ export default function SignUpPage() {
     return () => {
       cancelled = true;
     };
-  }, [router, role]);
+  }, [router]);
 
   // "Continue with Google" — better-auth redirects to Google and back to
   // /sign-up?google=success, where the effect above finishes the sync.
   const handleGoogleSignUp = async () => {
     setError('');
     setGoogleLoading(true);
+
+    // Persist the selected role + restaurant for the post-OAuth account linking.
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem(
+        'pizzahub_oauth_signup',
+        JSON.stringify({ role, restaurantName })
+      );
+    }
 
     try {
       const res = await authClient.signIn.social({
@@ -178,7 +207,7 @@ export default function SignUpPage() {
       }
       toast.success('Account created successfully! Redirecting...');
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      router.push('/dashboard');
+      router.replace('/');
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Something went wrong';
       setError(message);

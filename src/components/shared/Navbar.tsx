@@ -4,13 +4,16 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { Pizza, LayoutDashboard, LogOut, Menu, X, ChevronDown } from 'lucide-react';
+import { Pizza, LayoutDashboard, LogOut, Menu, X, ChevronDown, ShoppingCart } from 'lucide-react';
 import { AuthUser, clearAuthSession, getAuthUser } from '@/lib/auth-session';
+import { useCart } from '@/context/CartContext';
+import CartDrawer from '@/components/shared/CartDrawer';
 import { toast } from 'sonner';
 
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
+  const { openCart, itemCount } = useCart();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -74,10 +77,26 @@ export default function Navbar() {
         {/* Auth Actions */}
         <div className="hidden md:flex items-center gap-3">
           {user ? (
-            <div className="relative" data-user-menu>
+            <>
+              {/* Cart Badge Button */}
               <button
                 type="button"
-                onClick={() => setUserMenuOpen((prev) => !prev)}
+                onClick={openCart}
+                aria-label="Open shopping cart"
+                className="relative flex items-center justify-center w-10 h-10 rounded-full bg-red-50 border border-red-100 hover:border-[#E2001]/60 hover:bg-red-100 transition-all duration-300"
+              >
+                <ShoppingCart className="w-5 h-5 text-[#E2001]" />
+                {itemCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-[#E2001] text-white text-[10px] font-bold flex items-center justify-center">
+                    {itemCount > 99 ? '99+' : itemCount}
+                  </span>
+                )}
+              </button>
+
+              <div className="relative" data-user-menu>
+                <button
+                  type="button"
+                  onClick={() => setUserMenuOpen((prev) => !prev)}
                 aria-haspopup="menu"
                 aria-expanded={userMenuOpen}
                 className="flex items-center gap-2 pl-1 pr-3 py-1.5 rounded-full bg-red-50 border border-red-100 hover:border-[#E20001]/60 transition-all duration-300"
@@ -131,7 +150,8 @@ export default function Navbar() {
                   </div>
                 </div>
               )}
-            </div>
+              </div>
+            </>
           ) : (
             <>
               <Link href="/sign-in" className="px-4 py-2 text-sm font-bold text-gray-700 hover:text-[#E2001]">
@@ -164,6 +184,17 @@ export default function Navbar() {
           </Link>
           {user ? (
             <>
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileOpen(false);
+                  openCart();
+                }}
+                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold text-[#E2001] hover:bg-red-50 transition-all"
+              >
+                <ShoppingCart className="w-4 h-4" />
+                Cart {itemCount > 0 ? `(${itemCount})` : ''}
+              </button>
               <Link
                 href="/dashboard"
                 onClick={() => setMobileOpen(false)}
@@ -201,6 +232,9 @@ export default function Navbar() {
           )}
         </div>
       )}
+
+      {/* Cart Drawer */}
+      <CartDrawer />
     </header>
   );
 }

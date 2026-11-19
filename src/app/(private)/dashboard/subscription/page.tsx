@@ -55,12 +55,12 @@ export default function SubscriptionPage() {
       if (!res.ok) {
         throw new Error(data.message || 'Failed to start checkout.');
       }
-      const sessionUrl = data.session?.url || data.url;
+      const sessionUrl = data.url;
       if (!sessionUrl) {
         throw new Error('Checkout session URL not returned.');
       }
       // Redirect to Stripe checkout hosted page.
-      window.location.href = sessionUrl;
+      window.location.href = data.url;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Something went wrong while upgrading.';
       toast.error(message);

@@ -5,6 +5,7 @@ export interface AuthUser {
   role: 'customer' | 'vendor' | 'admin';
   restaurantName?: string | null;
   image?: string;
+  plan?: 'free' | 'premium';
 }
 
 export function setAuthSession(token: string, user: AuthUser) {

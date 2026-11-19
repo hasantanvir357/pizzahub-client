@@ -1,10 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { getToken } from '@/lib/auth-session';
+import { getAuthUser, getToken, AuthUser } from '@/lib/auth-session';
 import { Loader2, PlusCircle, Upload } from 'lucide-react';
 import { toast } from 'sonner';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+
+const FREE_PLAN_MENU_ITEM_LIMIT = 3;
+const FREE_PLAN_LIMIT_WARNING =
+  'You have reached the Free plan limit (3/3 items). Upgrade to Premium for unlimited menu items.';
 
 export default function AddMenuPage() {
   const router = useRouter();
@@ -16,6 +22,42 @@ export default function AddMenuPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [vendorItems, setVendorItems] = useState(0);
+  const [user, setUser] = useState<AuthUser | null>(null);
+
+  useEffect(() => {
+    const syncUser = () => setUser(getAuthUser());
+    syncUser();
+    window.addEventListener('auth-change', syncUser);
+    return () => window.removeEventListener('auth-change', syncUser);
+  }, []);
+
+  const isFreePlanVendor = user?.role === 'vendor' && user?.plan !== 'premium';
+  const showFreePlanLimit = isFreePlanVendor && vendorItems >= FREE_PLAN_MENU_ITEM_LIMIT;
+
+  useEffect(() => {
+    let ignore = false;
+    const fetchVendorItems = async () => {
+      const token = getToken();
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/menu/vendor/my-items`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (!ignore) setVendorItems((data.items || []).length);
+      }
+    };
+    fetchVendorItems();
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (showFreePlanLimit) {
+      toast.warning(FREE_PLAN_LIMIT_WARNING);
+    }
+  }, [showFreePlanLimit]);
 
   const uploadToImgBB = async (file: File) => {
     const formData = new FormData();
@@ -82,6 +124,24 @@ export default function AddMenuPage() {
       <p className="text-sm text-gray-500 mt-1 mb-6">
         Submit a new item to your kitchen menu (Admin approval required before going live).
       </p>
+
+      {showFreePlanLimit && (
+        <Card className="mb-6 overflow-hidden border-amber-200 bg-amber-50">
+          <CardContent className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5">
+            <p className="text-sm font-bold text-amber-800">{FREE_PLAN_LIMIT_WARNING}</p>
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => {
+                window.location.href = '/dashboard/subscription';
+              }}
+              className="rounded-xl bg-[#E20001] hover:bg-[#DB0007] text-white text-xs font-bold"
+            >
+              Upgrade to Premium
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {error && (
         <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-xs font-bold text-[#E20001]">

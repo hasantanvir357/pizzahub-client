@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
-import { setAuthSession } from "@/lib/auth-session";
+import { getAuthUser, setAuthSession } from "@/lib/auth-session";
 import { authClient } from "@/lib/auth-client";
 import { toast } from 'sonner';
 
@@ -26,7 +26,7 @@ export default function SignInPage() {
 
   // Once better-auth redirects back from Google (?google=success), sync the
   // Google profile with the PizzaHub backend so the backend JWT + user role
-  // are saved, then continue to /dashboard.
+  // are saved, then continue to the home page.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
 
@@ -49,6 +49,26 @@ export default function SignInPage() {
           throw new Error(sessionError?.message || 'Google session not found. Please try again.');
         }
 
+        // Read the pending Google sign-up intent (if any) before syncing the
+        // OAuth profile with the PizzaHub backend.
+        let oauthRole: 'customer' | 'vendor' | 'admin' = 'customer';
+        let oauthRestaurantName: string | undefined;
+        const storedRaw = sessionStorage.getItem('pizzahub_oauth_signup');
+        if (storedRaw) {
+          try {
+            const parsed = JSON.parse(storedRaw);
+            if (parsed?.role) oauthRole = parsed.role;
+            if (parsed?.restaurantName) oauthRestaurantName = parsed.restaurantName;
+          } catch {
+            // Ignore malformed intent payloads.
+          }
+          sessionStorage.removeItem('pizzahub_oauth_signup');
+        }
+
+        const currentUser = getAuthUser();
+        const role = oauthRole || currentUser?.role || 'customer';
+        const restaurantName = oauthRestaurantName || currentUser?.restaurantName || undefined;
+
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/google`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -57,6 +77,8 @@ export default function SignInPage() {
             email: session.user.email,
             name: session.user.name,
             image: session.user.image ?? undefined,
+            role,
+            restaurantName,
           }),
         });
 
@@ -68,7 +90,7 @@ export default function SignInPage() {
         }
         if (cancelled) return;
         toast.success('Welcome back! Signing you in...');
-        router.replace('/dashboard');
+        router.replace('/');
       } catch (err: unknown) {
         if (cancelled) return;
         const message = err instanceof Error ? err.message : 'Google sign-in failed';
@@ -88,6 +110,11 @@ export default function SignInPage() {
   const handleGoogleSignIn = async () => {
     setError('');
     setGoogleLoading(true);
+
+    // A fresh Google sign-in has no sign-up intent — clear any stale one.
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('pizzahub_oauth_signup');
+    }
 
     try {
       const res = await authClient.signIn.social({
@@ -149,7 +176,7 @@ export default function SignInPage() {
       }
       toast.success('Welcome back! Signing you in...');
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      router.push('/dashboard');
+      router.replace('/');
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Login failed';
       setError(message);

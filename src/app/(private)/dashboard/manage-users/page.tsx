@@ -32,7 +32,19 @@ export default function ManageUsersPage() {
       });
       if (res.ok) {
         const data = await res.json();
-        if (!ignore) setUsers(data.users || data || []);
+        const rawUsers: ManagedUser[] = Array.isArray(data?.users)
+          ? data.users
+          : Array.isArray(data)
+            ? data
+            : [];
+        // De-duplicate by id so no user ever renders as duplicate rows.
+        const seen = new Set<string>();
+        const uniqueUsers = rawUsers.filter((user) => {
+          if (seen.has(user._id)) return false;
+          seen.add(user._id);
+          return true;
+        });
+        if (!ignore) setUsers(uniqueUsers);
       }
       if (!ignore) setLoading(false);
     };
