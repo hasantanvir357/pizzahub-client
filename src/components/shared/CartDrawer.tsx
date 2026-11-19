@@ -14,6 +14,12 @@ export default function CartDrawer() {
   const router = useRouter();
   const { items, isOpen, closeCart, updateQuantity, removeItem, itemCount, subtotal } = useCart();
   const [user, setUser] = useState<AuthUser | null>(() => getAuthUser());
+  const [mounted, setMounted] = useState(false);
+
+  // Portals require a real DOM node; render nothing until mounted on the client.
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const syncUser = () => setUser(getAuthUser());
@@ -55,6 +61,12 @@ export default function CartDrawer() {
   };
 
   const formatPrice = (value: number) => `$${Number(value).toFixed(2)}`;
+
+  // SSR safety: `document` is unavailable during server rendering, so skip the
+  // portal entirely until the component has mounted on the client.
+  if (!mounted || typeof document === 'undefined') {
+    return null;
+  }
 
   return createPortal(
     <AnimatePresence>
@@ -136,7 +148,7 @@ export default function CartDrawer() {
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-bold text-gray-900 truncate">{item.name}</p>
                           {item.size && <p className="text-xs text-gray-500 mt-0.5">{item.size} size</p>}
-                          <p className="text-xs font-bold text-[#E2001] mt-1">
+                          <p className="text-xs font-bold text-[#E20001] mt-1">
                             {formatPrice(item.price)} × {item.quantity}
                           </p>
                           <p className="text-sm font-extrabold text-gray-900 mt-0.5">
@@ -147,7 +159,7 @@ export default function CartDrawer() {
                           type="button"
                           aria-label={`Remove ${item.name} from cart`}
                           onClick={() => removeItem(item.menuItemId, item.size)}
-                          className="shrink-0 w-8 h-8 rounded-full bg-red-50 border border-red-100 text-[#E2001] hover:bg-red-100 hover:text-[#DB0007] flex items-center justify-center transition-colors"
+                          className="shrink-0 w-8 h-8 rounded-full bg-red-50 border border-red-100 text-[#E20001] hover:bg-red-100 hover:text-[#DB0007] flex items-center justify-center transition-colors"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
