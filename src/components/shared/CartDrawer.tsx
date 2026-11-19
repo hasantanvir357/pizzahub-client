@@ -12,8 +12,7 @@ import { toast } from 'sonner';
 
 export default function CartDrawer() {
   const router = useRouter();
-  const { items, isOpen, closeCart, updateQuantity, removeItem, clearCart, itemCount, subtotal } = useCart();
-  const [submitting, setSubmitting] = useState(false);
+  const { items, isOpen, closeCart, updateQuantity, removeItem, itemCount, subtotal } = useCart();
   const [user, setUser] = useState<AuthUser | null>(() => getAuthUser());
 
   useEffect(() => {
@@ -38,64 +37,21 @@ export default function CartDrawer() {
     return true;
   };
 
-  const placeOrder = async (item: CartLineItem) => {
-    const token = getToken();
-    if (!token) throw new Error('Please sign in to place an order.');
-
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orders`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({
-        menuItemId: item.menuItemId,
-        size: item.size || 'Regular',
-        quantity: item.quantity,
-        totalPrice: Number((item.price * item.quantity).toFixed(2)),
-        phone: '',
-        customerPhone: '',
-        address: '',
-        deliveryAddress: '',
-        paymentMethod: 'Cash on Delivery',
-      }),
-    });
-
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.message || 'Failed to place order');
-    return data;
-  };
-
-  const handleCheckoutItem = async (item: CartLineItem) => {
+  const handleOrderNow = (item: CartLineItem) => {
     if (!requireCustomer()) return;
-
-    setSubmitting(true);
-    try {
-      await placeOrder(item);
-      removeItem(item.menuItemId, item.size);
-      toast.success('Order placed successfully!');
-      closeCart();
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to place order';
-      toast.error(message);
-    } finally {
-      setSubmitting(false);
-    }
+    closeCart();
+    router.push(
+      `/checkout?mode=single&id=${encodeURIComponent(item.menuItemId)}&size=${encodeURIComponent(
+        item.size || 'Regular'
+      )}`
+    );
   };
 
-  const handleCheckoutAll = async () => {
+  const handleCheckoutAll = () => {
     if (items.length === 0) return;
     if (!requireCustomer()) return;
-
-    setSubmitting(true);
-    try {
-      await Promise.all(items.map((item) => placeOrder(item)));
-      clearCart();
-      toast.success('Order placed successfully!');
-      closeCart();
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to place order';
-      toast.error(message);
-    } finally {
-      setSubmitting(false);
-    }
+    closeCart();
+    router.push('/checkout?mode=all');
   };
 
   const formatPrice = (value: number) => `$${Number(value).toFixed(2)}`;
@@ -221,9 +177,8 @@ export default function CartDrawer() {
 
                         <button
                           type="button"
-                          onClick={() => handleCheckoutItem(item)}
-                          disabled={submitting}
-                          className="bg-red-600 hover:bg-red-700 text-white font-bold opacity-100 rounded-full px-4 py-2 text-sm shadow-sm disabled:opacity-100"
+                          onClick={() => handleOrderNow(item)}
+                          className="bg-red-600 hover:bg-red-700 text-white font-bold opacity-100 rounded-full px-4 py-2 text-sm shadow-sm"
                         >
                           Order Now
                         </button>
@@ -253,10 +208,9 @@ export default function CartDrawer() {
                 <button
                   type="button"
                   onClick={handleCheckoutAll}
-                  disabled={submitting}
-                  className="w-full bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl py-3 text-sm shadow-sm opacity-100 disabled:opacity-100"
+                  className="w-full bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl py-3 text-sm shadow-sm opacity-100"
                 >
-                  Checkout All Items (${formatPrice(subtotal)})
+                  Checkout All Items ($${subtotal.toFixed(2)})
                 </button>
               </div>
             )}
