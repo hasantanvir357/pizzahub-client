@@ -4,7 +4,18 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowLeft, Store, CheckCircle2, Clock, ShieldAlert, CreditCard } from 'lucide-react';
+import {
+  ArrowLeft,
+  Store,
+  CheckCircle2,
+  Clock,
+  ShieldAlert,
+  CreditCard,
+  Star,
+  Send,
+  MessageSquare,
+  User as UserIcon,
+} from 'lucide-react';
 import { getAuthUser, getToken, AuthUser } from '@/lib/auth-session';
 import { toast } from 'sonner';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -18,6 +29,39 @@ interface MenuItem {
   image: string;
   toppings?: string[];
   restaurantName?: string;
+}
+
+interface Review {
+  _id: string;
+  user?: { name?: string; image?: string };
+  customerName?: string;
+  rating: number;
+  comment?: string;
+  review?: string;
+  createdAt?: string;
+  date?: string;
+}
+
+function ReviewStars({ value, size = 'sm' }: { value: number; size?: 'sm' | 'lg' }) {
+  return (
+    <div className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <Star
+          key={star}
+          className={`${size === 'lg' ? 'w-6 h-6' : 'w-4 h-4'} ${
+            value >= star ? 'fill-amber-400 text-amber-400' : 'fill-gray-200 text-gray-200'
+          }`}
+        />
+      ))}
+    </div>
+  );
+}
+
+function formatReviewDate(value?: string) {
+  if (!value) return '';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return parsed.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 const SIZE_MULTIPLIERS: Record<'Regular' | 'Medium' | 'Large', number> = {
@@ -43,6 +87,15 @@ export default function MenuDetailsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
+  // Review state
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [reviewsError, setReviewsError] = useState('');
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [reviewText, setReviewText] = useState('');
+  const [submittingReview, setSubmittingReview] = useState(false);
+
   const [user] = useState<AuthUser | null>(() => getAuthUser());
   useEffect(() => {
     let ignore = false;
@@ -58,6 +111,33 @@ export default function MenuDetailsPage() {
       }
     };
     if (id) fetchItem();
+    return () => {
+      ignore = true;
+    };
+  }, [id]);
+
+  // Fetch customer reviews for this menu item.
+  useEffect(() => {
+    if (!id) return;
+    let ignore = false;
+    const fetchReviews = async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/menu/${id}/reviews`);
+        if (!res.ok) {
+          if (!ignore) setReviewsError('Unable to load reviews.');
+          return;
+        }
+        const data = await res.json();
+        if (ignore) return;
+        const list = data.reviews || data.data || data;
+        setReviews(Array.isArray(list) ? list : []);
+      } catch {
+        if (!ignore) setReviewsError('Unable to load reviews.');
+      } finally {
+        if (!ignore) setReviewsLoading(false);
+      }
+    };
+    fetchReviews();
     return () => {
       ignore = true;
     };
@@ -79,6 +159,9 @@ export default function MenuDetailsPage() {
   }
 
   const isStaff = user?.role === 'vendor' || user?.role === 'admin';
+  const isCustomer = user?.role === 'customer';
+  const averageRating =
+    reviews.length > 0 ? reviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0) / reviews.length : 0;
   const unitPrice = Number((item.price * SIZE_MULTIPLIERS[size]).toFixed(2));
   const totalAmount = Number((unitPrice * quantity).toFixed(2));
 
@@ -129,6 +212,70 @@ export default function MenuDetailsPage() {
       toast.error(message);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleSubmitReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const token = getToken();
+
+    // Only signed-in customers may submit a review.
+    if (!user || user.role !== 'customer') {
+      toast.error('Please sign in as a customer to leave a review.');
+      if (!user) router.push('/sign-in');
+      return;
+    }
+    if (!token) {
+      router.push('/sign-in');
+      return;
+    }
+    if (rating < 1) {
+      toast.error('Please select a star rating (1–5).');
+      return;
+    }
+
+    setSubmittingReview(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/menu/${item._id}/reviews`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          rating,
+          comment: reviewText.trim(),
+          review: reviewText.trim(),
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to submit review.');
+      }
+
+      const created = data.review || data.data;
+      setReviews((prev) => [
+        ...(created
+          ? [created]
+          : [
+              {
+                _id: `${Date.now()}`,
+                user: { name: user.name, image: user.image },
+                rating,
+                comment: reviewText.trim(),
+                createdAt: new Date().toISOString(),
+              },
+            ]),
+        ...prev,
+      ]);
+      setRating(0);
+      setReviewText('');
+      toast.success('Review submitted! Thank you for your feedback.');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to submit review.';
+      toast.error(message);
+    } finally {
+      setSubmittingReview(false);
     }
   };
 
@@ -408,6 +555,130 @@ export default function MenuDetailsPage() {
           )}
         </div>
       </div>
+
+      {/* Customer Reviews */}
+      <section className="mt-10">
+        <div className="flex items-center gap-2 mb-6">
+          <span className="w-9 h-9 rounded-lg bg-red-50 text-[#E20001] flex items-center justify-center">
+            <MessageSquare className="w-4 h-4" />
+          </span>
+          <h2 className="text-xl font-extrabold text-gray-900">Customer Reviews</h2>
+          <span className="text-sm text-gray-500">({reviews.length})</span>
+        </div>
+
+        {/* Rating Summary */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-xs p-6 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-6">
+            <div className="text-center sm:text-left shrink-0">
+              <p className="text-4xl font-extrabold text-gray-900">{averageRating.toFixed(1)}</p>
+              <div className="flex items-center justify-center sm:justify-start mt-1.5">
+                <ReviewStars value={Math.round(averageRating)} />
+              </div>
+              <p className="text-xs text-gray-500 mt-1">{reviews.length} review(s)</p>
+            </div>
+            <div className="hidden sm:block h-px bg-gray-100 flex-1" />
+            <div className="flex-1 text-sm text-gray-600 leading-relaxed">
+              {isCustomer
+                ? 'Taste the pizza? Share your experience with the PizzaHub community.'
+                : 'Sign in as a customer to rate and review this pizza.'}
+            </div>
+          </div>
+        </div>
+
+        {/* Review Form (logged-in customers only) */}
+        {isCustomer && (
+          <form onSubmit={handleSubmitReview} className="bg-white rounded-2xl border border-gray-100 shadow-xs p-6 mb-6 space-y-4">
+            <p className="text-sm font-bold text-gray-900">Rate this pizza</p>
+
+            <div className="flex items-center gap-1" onMouseLeave={() => setHoverRating(0)}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  type="button"
+                  onClick={() => setRating(star)}
+                  onMouseEnter={() => setHoverRating(star)}
+                  aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
+                  className="p-0.5 focus:outline-none"
+                >
+                  <Star
+                    className={`w-7 h-7 transition-colors ${
+                      (hoverRating || rating) >= star ? 'fill-amber-400 text-amber-400' : 'text-gray-300'
+                    }`}
+                  />
+                </button>
+              ))}
+              <span className="ml-2 text-xs font-semibold text-gray-500">
+                {rating ? `${rating}/5` : 'Select rating'}
+              </span>
+            </div>
+
+            <textarea
+              rows={3}
+              value={reviewText}
+              onChange={(e) => setReviewText(e.target.value)}
+              placeholder="Tell us what you thought of this pizza..."
+              className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-200 text-sm focus:outline-none focus:border-[#E20001] resize-none"
+            />
+
+            <button
+              type="submit"
+              disabled={submittingReview}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#E20001] hover:bg-[#DB0007] text-white text-sm font-bold transition-colors disabled:opacity-60"
+            >
+              {submittingReview ? (
+                'Submitting...'
+              ) : (
+                <>
+                  <Send className="w-3.5 h-3.5" />
+                  Submit Review
+                </>
+              )}
+            </button>
+          </form>
+        )}
+
+        {/* Reviews List */}
+        {reviewsLoading ? (
+          <div className="space-y-4">
+            <div className="h-24 rounded-2xl bg-gray-100 animate-pulse" />
+            <div className="h-24 rounded-2xl bg-gray-100 animate-pulse" />
+          </div>
+        ) : reviews.length > 0 ? (
+          <div className="space-y-4">
+            {reviews.map((review) => {
+              const reviewerName = review.user?.name || review.customerName || 'Anonymous Customer';
+              return (
+                <div key={review._id} className="bg-white rounded-2xl border border-gray-100 shadow-xs p-5">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-9 h-9 rounded-full bg-[#E20001] text-white flex items-center justify-center font-bold text-sm shrink-0">
+                      {reviewerName.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-gray-900 truncate">{reviewerName}</p>
+                      <p className="text-[11px] text-gray-400">{formatReviewDate(review.createdAt || review.date)}</p>
+                    </div>
+                  </div>
+                  <div className="mb-2">
+                    <ReviewStars value={Number(review.rating) || 0} />
+                  </div>
+                  {(review.comment || review.review) && (
+                    <p className="text-sm text-gray-600 leading-relaxed">{review.comment || review.review}</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-10 text-center">
+            <UserIcon className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+            <p className="text-sm text-gray-500">No reviews yet. Be the first to review this pizza!</p>
+          </div>
+        )}
+
+        {reviewsError && (
+          <p className="mt-4 text-center text-xs font-semibold text-gray-400">{reviewsError}</p>
+        )}
+      </section>
     </div>
   );
 }

@@ -22,9 +22,9 @@ export default function SignInPage() {
     setPassword('');
   }, []);
 
-  // Strong password rule: 8+ chars, at least one uppercase and one lowercase.
+  // Strong password rule: 6+ chars, at least one uppercase and one lowercase.
   const validatePassword = (value: string): string => {
-    if (value.length < 8) return 'Password must be at least 8 characters long.';
+    if (value.length < 6) return 'Password must be at least 6 characters long.';
     if (!/[A-Z]/.test(value)) return 'Password must include at least one uppercase letter (A-Z).';
     if (!/[a-z]/.test(value)) return 'Password must include at least one lowercase letter (a-z).';
     return '';
@@ -109,7 +109,7 @@ export default function SignInPage() {
                 // Keep showing the inline error until the rule is satisfied.
                 if (passwordError) setPasswordError(validatePassword(value));
               }}
-              placeholder="••••••••"
+              placeholder="At least 6 characters, e.g. Pizza6"
               className={`w-full px-4 py-2.5 rounded-xl border text-sm focus:outline-none focus:border-[#E20001] ${
                 passwordError ? 'border-[#E20001]' : 'border-gray-200'
               }`}
@@ -123,7 +123,7 @@ export default function SignInPage() {
             </button>
           </div>
           <p className="text-[11px] text-gray-500 mt-1">
-            Must be 8+ characters with at least one uppercase and one lowercase letter.
+            Must be 6+ characters with at least one uppercase and one lowercase letter.
           </p>
           {passwordError && (
             <p className="mt-1.5 text-xs font-semibold text-[#E20001]">{passwordError}</p>

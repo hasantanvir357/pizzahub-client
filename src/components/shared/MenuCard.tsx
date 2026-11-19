@@ -3,8 +3,11 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Heart } from 'lucide-react';
 import { getAuthUser, AuthUser } from '@/lib/auth-session';
+import { toast } from 'sonner';
+
+const FAVORITES_KEY = 'pizzahub_favorites';
 
 export interface MenuItem {
   _id: string;
@@ -23,6 +26,7 @@ export interface MenuItem {
 
 export default function MenuCard({ item, index = 0 }: { item: MenuItem; index?: number }) {
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [favorite, setFavorite] = useState(false);
 
   useEffect(() => {
     const syncUser = () => setUser(getAuthUser());
@@ -30,6 +34,42 @@ export default function MenuCard({ item, index = 0 }: { item: MenuItem; index?: 
     window.addEventListener('auth-change', syncUser);
     return () => window.removeEventListener('auth-change', syncUser);
   }, []);
+
+  // Sync heart state with the locally stored favorites list.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(FAVORITES_KEY);
+      if (!raw) return;
+      const list = JSON.parse(raw);
+      if (Array.isArray(list)) setFavorite(list.includes(item._id));
+    } catch {
+      // Ignore malformed localStorage values.
+    }
+  }, [item._id]);
+
+  const toggleFavorite = () => {
+    try {
+      const raw = localStorage.getItem(FAVORITES_KEY);
+      let list: string[] = [];
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) list = parsed;
+      }
+
+      if (favorite) {
+        list = list.filter((id) => id !== item._id);
+        setFavorite(false);
+        toast('Removed from favorites');
+      } else {
+        list = Array.from(new Set([...list, item._id]));
+        setFavorite(true);
+        toast.success('Added to favorites');
+      }
+      localStorage.setItem(FAVORITES_KEY, JSON.stringify(list));
+    } catch {
+      // localStorage may be unavailable (e.g. private mode); fail silently.
+    }
+  };
 
   const isVendorOrAdmin = user?.role === 'vendor' || user?.role === 'admin';
 
@@ -47,14 +87,30 @@ export default function MenuCard({ item, index = 0 }: { item: MenuItem; index?: 
           sizes="(max-width: 768px) 100vw, 33vw"
           className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
         />
-        <span className="absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-bold bg-white/95 text-gray-800 shadow-xs">
-          {item.category}
-        </span>
-        {item.isPopular && (
-          <span className="absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-bold bg-[#E20001] text-white">
-            Popular
+        <div className="absolute top-3 left-3 flex items-center gap-2">
+          <span className="px-3 py-1 rounded-full text-xs font-bold bg-white/95 text-gray-800 shadow-xs">
+            {item.category}
           </span>
-        )}
+          {item.isPopular && (
+            <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#E20001] text-white">
+              Popular
+            </span>
+          )}
+        </div>
+        {/* Wishlist Toggle */}
+        <button
+          type="button"
+          onClick={toggleFavorite}
+          aria-label={favorite ? 'Remove from favorites' : 'Add to favorites'}
+          aria-pressed={favorite}
+          className={`absolute top-3 right-3 flex items-center justify-center w-9 h-9 rounded-full shadow-md transition-all duration-300 ${
+            favorite
+              ? 'bg-[#E20001] text-white hover:bg-[#DB0007]'
+              : 'bg-white/95 text-gray-400 hover:text-[#E20001] hover:scale-110'
+          }`}
+        >
+          <Heart className={`w-4 h-4 ${favorite ? 'fill-current' : ''}`} />
+        </button>
       </div>
 
       {/* Content */}

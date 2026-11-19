@@ -16,6 +16,8 @@ import {
   Home,
   LogOut,
   Pizza,
+  CreditCard,
+  ReceiptText,
 } from 'lucide-react';
 import { getAuthUser, clearAuthSession, AuthUser } from '@/lib/auth-session';
 import { toast } from 'sonner';
@@ -46,6 +48,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           { label: 'Manage Users', href: '/dashboard/manage-users', icon: Users },
           { label: 'Blocked Users', href: '/dashboard/blocked-users', icon: ShieldBan },
           { label: 'All Orders', href: '/dashboard/customer-orders', icon: ClipboardList },
+          { label: 'Transactions', href: '/dashboard/transactions', icon: ReceiptText },
           { label: 'My Profile', href: '/dashboard/profile', icon: UserCircle },
         ]
       : role === 'vendor'
@@ -54,6 +57,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             { label: 'Add New Pizza', href: '/dashboard/add-menu', icon: PlusCircle },
             { label: 'My Menu Items', href: '/dashboard/my-menu', icon: UtensilsCrossed },
             { label: 'Kitchen Orders', href: '/dashboard/customer-orders', icon: ClipboardList },
+            { label: 'Subscription', href: '/dashboard/subscription', icon: CreditCard },
             { label: 'My Profile', href: '/dashboard/profile', icon: UserCircle },
           ]
         : [
