@@ -74,7 +74,7 @@ const SIZE_MULTIPLIERS: Record<'Regular' | 'Medium' | 'Large', number> = {
 export default function MenuDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { addItem } = useCart();
+  const { addItem, closeCart } = useCart();
 
   const [item, setItem] = useState<MenuItem | null>(null);
   const [loading, setLoading] = useState(true);
@@ -169,10 +169,15 @@ export default function MenuDetailsPage() {
 
   const handleOrder = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isStaff) return;
+    if (isStaff) {
+      toast.warning('Only Customer accounts can place orders. Please sign in with a Customer account.');
+      return;
+    }
 
     const token = getToken();
     if (!token || !user) {
+      toast.error('Please sign in or create a customer account to place an order.');
+      closeCart();
       router.push('/sign-in');
       return;
     }
@@ -571,7 +576,7 @@ export default function MenuDetailsPage() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full py-3 rounded-xl bg-[#E20001] hover:bg-[#DB0007] text-white font-bold text-sm transition-colors disabled:opacity-60"
+                className="w-full py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm opacity-100 transition-colors disabled:opacity-100"
               >
                 {submitting ? 'Placing Order...' : `Confirm Order ($${totalAmount})`}
               </button>

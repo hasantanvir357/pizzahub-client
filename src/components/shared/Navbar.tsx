@@ -83,14 +83,13 @@ export default function Navbar() {
                 type="button"
                 onClick={openCart}
                 aria-label="Open shopping cart"
-                className="relative flex items-center justify-center w-10 h-10 rounded-full bg-red-50 border border-red-100 hover:border-[#E2001]/60 hover:bg-red-100 transition-all duration-300"
+                className="relative flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-semibold px-3.5 py-2 rounded-full shadow-sm"
               >
-                <ShoppingCart className="w-5 h-5 text-[#E2001]" />
-                {itemCount > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-[#E2001] text-white text-[10px] font-bold flex items-center justify-center">
-                    {itemCount > 99 ? '99+' : itemCount}
-                  </span>
-                )}
+                <ShoppingCart className="w-5 h-5" />
+                <span className="text-sm font-bold">Cart</span>
+                <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 flex items-center justify-center font-extrabold text-xs bg-white text-red-600 rounded-full">
+                  {itemCount}
+                </span>
               </button>
 
               <div className="relative" data-user-menu>
@@ -159,7 +158,7 @@ export default function Navbar() {
               </Link>
               <Link
                 href="/sign-up"
-                className="px-5 py-2 rounded-full bg-[#E2001] hover:bg-[#DB0007] text-white text-sm font-bold pizza-glow transition-all"
+                className="px-5 py-2 rounded-full bg-red-600 hover:bg-red-700 text-white font-semibold opacity-100 shadow-sm transition-all"
               >
                 Order Now
               </Link>
@@ -190,7 +189,7 @@ export default function Navbar() {
                   setMobileOpen(false);
                   openCart();
                 }}
-                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold text-[#E2001] hover:bg-red-50 transition-all"
+                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-full bg-red-600 hover:bg-red-700 text-white font-semibold shadow-sm"
               >
                 <ShoppingCart className="w-4 h-4" />
                 Cart {itemCount > 0 ? `(${itemCount})` : ''}
