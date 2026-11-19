@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Check, Crown, Loader2, Sparkles } from 'lucide-react';
-import { getToken } from '@/lib/auth-session';
+import { getAuthUser, getToken, type AuthUser } from '@/lib/auth-session';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 
@@ -33,6 +33,22 @@ const premiumFeatures: PlanFeature[] = [
 export default function SubscriptionPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState<AuthUser | null>(null);
+
+  // Keep the stored auth user in sync so plan changes (e.g. after a successful
+  // payment on /payment/success) reflect immediately on this page.
+  useEffect(() => {
+    const syncUser = () => setUser(getAuthUser());
+    syncUser();
+    window.addEventListener('auth-change', syncUser);
+    window.addEventListener('storage', syncUser);
+    return () => {
+      window.removeEventListener('auth-change', syncUser);
+      window.removeEventListener('storage', syncUser);
+    };
+  }, []);
+
+  const isPremium = user?.plan === 'premium';
 
   const handleUpgrade = async () => {
     const token = getToken();
@@ -161,22 +177,34 @@ export default function SubscriptionPage() {
             ))}
           </ul>
 
-          <Button
-            type="button"
-            size="lg"
-            onClick={handleUpgrade}
-            disabled={loading}
-            className="mt-8 w-full rounded-xl text-sm font-bold bg-[#E20001] hover:bg-[#DB0007] text-white pizza-glow disabled:opacity-60"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Redirecting to Checkout...
-              </>
-            ) : (
-              'Upgrade to Premium'
-            )}
-          </Button>
+          {isPremium ? (
+            <Button
+              type="button"
+              size="lg"
+              disabled
+              className="mt-8 w-full rounded-xl text-sm font-bold bg-emerald-50 text-emerald-600 hover:bg-emerald-50 cursor-not-allowed"
+            >
+              <Check className="w-4 h-4" />
+              Current Plan
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              size="lg"
+              onClick={handleUpgrade}
+              disabled={loading}
+              className="mt-8 w-full rounded-xl text-sm font-bold bg-[#E20001] hover:bg-[#DB0007] text-white pizza-glow disabled:opacity-60"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Redirecting to Checkout...
+                </>
+              ) : (
+                'Upgrade to Premium'
+              )}
+            </Button>
+          )}
         </div>
       </div>
 
