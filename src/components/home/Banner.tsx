@@ -1,30 +1,34 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { ArrowRight, Flame, Clock, MapPin, Star } from 'lucide-react';
 
 export default function Banner() {
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
-      <section className="group relative w-full min-h-[82vh] flex items-center justify-center overflow-hidden rounded-3xl bg-gray-950 shadow-lg hover:shadow-2xl transition-all duration-500">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+      <section className="group relative w-full min-h-[520px] md:min-h-[580px] max-h-[680px] py-16 md:py-24 flex items-center justify-center overflow-hidden rounded-3xl bg-gray-950 shadow-lg hover:shadow-2xl transition-all duration-500">
         <div className="absolute inset-0 animate-from-right">
-          <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat scale-100 transition-transform duration-700 ease-out group-hover:scale-105"
-            style={{
-              backgroundImage: `url('https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=2070&auto=format&fit=crop')`,
-            }}
+          <Image
+            src="https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=2070&auto=format&fit=crop"
+            alt=""
+            aria-hidden="true"
+            fill
+            priority
+            sizes="(min-width: 1280px) 1280px, 100vw"
+            className="absolute inset-0 object-cover object-center w-full h-full scale-100 transition-transform duration-700 ease-out group-hover:scale-105"
           />
         </div>
         <div className="absolute inset-0 bg-linear-to-b from-black/75 via-black/65 to-black/85" />
 
         {/* Content */}
-        <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white py-20 animate-from-left">
+        <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white animate-from-left">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#E20001]/20 border border-[#E20001]/50 text-[#FF6B6B] text-xs sm:text-sm font-bold uppercase tracking-widest mb-6 backdrop-blur-xs"
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#E20001]/20 border border-[#E20001]/50 text-[#FF6B6B] text-xs sm:text-sm font-bold uppercase tracking-widest mb-4 backdrop-blur-xs"
           >
             <Flame className="w-4 h-4 text-[#E20001]" />
             Wood-Fired & Handcrafted Daily
@@ -34,7 +38,7 @@ export default function Banner() {
             initial={{ opacity: 0, y: 25 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-tight mb-6"
+            className="text-3xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold tracking-tight leading-tight mb-6"
           >
             Hot & Fresh Pizza <span className="text-[#E20001] drop-shadow-[0_2px_15px_rgba(226,0,1,0.5)]">Delivered</span>{' '}
             to Your Door
@@ -44,7 +48,7 @@ export default function Banner() {
             initial={{ opacity: 0, y: 25 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="max-w-2xl mx-auto text-base sm:text-lg text-gray-200 leading-relaxed mb-10"
+            className="max-w-2xl mx-auto text-base sm:text-lg text-gray-200 leading-relaxed mb-6"
           >
             Discover top local pizzerias, customize your favorite crust and toppings, and track your piping-hot order from
             the oven straight to your doorstep.
@@ -55,7 +59,7 @@ export default function Banner() {
             initial={{ opacity: 0, y: 25 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12"
+            className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6"
           >
             <Link
               href="/menu"
@@ -71,7 +75,7 @@ export default function Banner() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.7, delay: 0.45 }}
-            className="flex flex-wrap items-center justify-center gap-6 sm:gap-10 text-xs sm:text-sm text-gray-300 pt-6 border-t border-white/15"
+            className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 md:gap-x-10 text-xs md:text-sm text-gray-300 pt-4 border-t border-white/15"
           >
             <div className="flex items-center gap-2">
               <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
