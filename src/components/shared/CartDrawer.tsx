@@ -172,7 +172,12 @@ export default function CartDrawer() {
                             type="button"
                             aria-label="Decrease quantity"
                             onClick={() => updateQuantity(item.menuItemId, item.size, item.quantity - 1)}
-                            className="w-8 h-8 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center transition-colors"
+                            disabled={item.quantity <= 1}
+                            className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                              item.quantity <= 1
+                                ? 'bg-red-100 text-red-300 cursor-not-allowed'
+                                : 'bg-red-600 hover:bg-red-700 text-white'
+                            }`}
                           >
                             <Minus className="w-3.5 h-3.5" />
                           </button>

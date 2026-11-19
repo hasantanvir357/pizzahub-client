@@ -7,6 +7,7 @@ import Link from 'next/link';
 import {
   ArrowLeft,
   Store,
+  Check,
   CheckCircle2,
   Clock,
   ShieldAlert,
@@ -17,7 +18,7 @@ import {
   User as UserIcon,
 } from 'lucide-react';
 import { getAuthUser, getToken, AuthUser } from '@/lib/auth-session';
-import { useCart } from '@/context/CartContext';
+import { cartItemKey, useCart } from '@/context/CartContext';
 import { toast } from 'sonner';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -74,7 +75,7 @@ const SIZE_MULTIPLIERS: Record<'Regular' | 'Medium' | 'Large', number> = {
 export default function MenuDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { addItem, closeCart } = useCart();
+  const { items, addItem, closeCart } = useCart();
 
   const [item, setItem] = useState<MenuItem | null>(null);
   const [loading, setLoading] = useState(true);
@@ -159,6 +160,11 @@ export default function MenuDetailsPage() {
       </div>
     );
   }
+
+  // True when the currently selected item + size combination is already a cart line.
+  const isSelectedInCart = items.some(
+    (line) => cartItemKey(line.menuItemId, line.size) === cartItemKey(item._id, size)
+  );
 
   const isStaff = user?.role === 'vendor' || user?.role === 'admin';
   const isCustomer = user?.role === 'customer';
@@ -567,10 +573,21 @@ export default function MenuDetailsPage() {
               <button
                 type="button"
                 onClick={handleAddToCart}
-                disabled={submitting}
-                className="w-full py-3 rounded-xl border border-[#E2001] hover:bg-red-50 text-[#E2001] hover:text-[#DB0007] font-bold text-sm transition-colors disabled:opacity-60"
+                disabled={submitting || isSelectedInCart}
+                className={`w-full py-3 rounded-xl border font-bold text-sm transition-colors disabled:opacity-60 ${
+                  isSelectedInCart
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-300 cursor-not-allowed'
+                    : 'border-[#E20001] hover:bg-red-50 text-[#E20001] hover:text-[#DB0007]'
+                }`}
               >
-                Add to Cart
+                {isSelectedInCart ? (
+                  <span className="inline-flex items-center justify-center gap-2">
+                    <Check className="w-4 h-4" />
+                    Added to Cart ✓
+                  </span>
+                ) : (
+                  'Add to Cart'
+                )}
               </button>
 
               <button

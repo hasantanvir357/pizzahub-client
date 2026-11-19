@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight, Heart } from 'lucide-react';
+import { ArrowRight, Check, Heart } from 'lucide-react';
 import { getAuthUser, AuthUser } from '@/lib/auth-session';
-import { useCart } from '@/context/CartContext';
+import { cartItemKey, useCart } from '@/context/CartContext';
 import { toast } from 'sonner';
 
 const FAVORITES_KEY = 'pizzahub_favorites';
@@ -28,7 +28,7 @@ export interface MenuItem {
 export default function MenuCard({ item, index = 0 }: { item: MenuItem; index?: number }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [favorite, setFavorite] = useState(false);
-  const { addItem } = useCart();
+  const { items, addItem } = useCart();
 
   useEffect(() => {
     const syncUser = () => setUser(getAuthUser());
@@ -86,6 +86,11 @@ export default function MenuCard({ item, index = 0 }: { item: MenuItem; index?: 
     });
     toast.success(`${item.name} added to cart`);
   };
+
+  // True when this item (Regular size) is already a line in the cart.
+  const isInCart = items.some(
+    (line) => cartItemKey(line.menuItemId, line.size) === cartItemKey(item._id, 'Regular')
+  );
 
   return (
     <div
@@ -165,9 +170,21 @@ export default function MenuCard({ item, index = 0 }: { item: MenuItem; index?: 
               <button
                 type="button"
                 onClick={handleAddToCart}
-                className="group inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-white border border-[#E2001] hover:bg-red-50 text-[#E2001] hover:text-[#DB0007] text-xs font-bold transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-lg"
+                disabled={isInCart}
+                className={`group inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300 ${
+                  isInCart
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-300 cursor-not-allowed opacity-90'
+                    : 'bg-white border border-[#E20001] hover:bg-red-50 text-[#E20001] hover:text-[#DB0007] hover:scale-105 active:scale-95 hover:shadow-lg'
+                }`}
               >
-                Add to Cart
+                {isInCart ? (
+                  <>
+                    <Check className="w-3.5 h-3.5" />
+                    Added to Cart ✓
+                  </>
+                ) : (
+                  'Add to Cart'
+                )}
               </button>
               <Link
               href={`/menu/${item._id}`}
