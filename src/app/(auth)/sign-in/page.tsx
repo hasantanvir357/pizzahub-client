@@ -90,13 +90,23 @@ export default function SignInPage() {
     setGoogleLoading(true);
 
     try {
-      const { error } = await authClient.signIn.social({
+      const res = await authClient.signIn.social({
         provider: 'google',
         callbackURL: '/sign-in?google=success',
       });
-      if (error) throw new Error(error.message || 'Google sign-in failed');
+      if (res.error) {
+        // Log + surface the exact error better-auth returned (message/code)
+        // instead of masking it behind a generic failure toast.
+        console.error('[Google sign-in] authClient.signIn.social error:', res.error);
+        throw new Error(res.error.message || res.error.code || 'Google sign-in failed');
+      }
+      if (res.data?.url) {
+        // Fallback: navigate to Google if the client did not auto-redirect.
+        window.location.assign(res.data.url);
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Google sign-in failed';
+      console.error('[Google sign-in] failed:', message);
       setError(message);
       toast.error(message);
       setGoogleLoading(false);

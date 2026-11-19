@@ -1,14 +1,20 @@
-import { NextResponse } from 'next/server';
+import { toNextJsHandler } from 'better-auth/next-js';
+import { auth } from '@/lib/auth';
 
-// Auth API placeholder. Wire up better-auth here once server credentials
-// (e.g. MONGODB_URI) are configured in .env.local.
-const notConfigured = () =>
-  NextResponse.json({ error: 'Authentication service is not configured yet.' }, { status: 501 });
+/**
+ * Better Auth catch-all handler.
+ *
+ * Serves every `/api/auth/*` request on this origin:
+ *   - POST /api/auth/sign-in/social   -> returns the Google authorization URL
+ *   - GET  /api/auth/callback/google  -> OAuth state + PKCE code exchange,
+ *                                        stores the user/session, redirects
+ *                                        to the page's callbackURL
+ *   - GET  /api/auth/session          -> reads the session back for the client
+ *
+ * (This file previously returned a 501 "not configured" placeholder, which made
+ * `authClient.signIn.social` fail immediately with "Google sign-in failed".)
+ */
+const handlers = toNextJsHandler(auth.handler);
 
-export function GET() {
-  return notConfigured();
-}
-
-export function POST() {
-  return notConfigured();
-}
+export const GET = handlers.GET;
+export const POST = handlers.POST;

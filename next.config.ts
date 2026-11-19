@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "i.ibb.co" },
+      // Google OAuth profile pictures (lh3/lh4/lh5/lh6.googleusercontent.com)
+      { protocol: "https", hostname: "lh3.googleusercontent.com" },
+      { protocol: "https", hostname: "*.googleusercontent.com" },
     ],
   },
   experimental: {
