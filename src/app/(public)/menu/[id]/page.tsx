@@ -12,6 +12,7 @@ import {
   Clock,
   ShieldAlert,
   CreditCard,
+  CalendarDays,
   Star,
   Send,
   MessageSquare,
@@ -83,9 +84,12 @@ export default function MenuDetailsPage() {
   const [quantity, setQuantity] = useState(1);
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
+  const [today, setToday] = useState('');
+  const [deliveryDate, setDeliveryDate] = useState('');
+  const [specialInstructions, setSpecialInstructions] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('Cash on Delivery');
   const [cardNumber, setCardNumber] = useState('4242 4242 4242 4242');
-  const [cardExpiry, setCardExpiry] = useState('12/34');
+  const [cardExpiry, setCardExpiry] = useState('12/28');
   const [cardCvc, setCardCvc] = useState('123');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -99,7 +103,42 @@ export default function MenuDetailsPage() {
   const [reviewText, setReviewText] = useState('');
   const [submittingReview, setSubmittingReview] = useState(false);
 
-  const [user] = useState<AuthUser | null>(() => getAuthUser());
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
+
+  // Session hydration: never redirect before localStorage has been read.
+  useEffect(() => {
+    const syncUser = () => {
+      setUser(getAuthUser());
+      setAuthChecked(true);
+    };
+    syncUser();
+    window.addEventListener('auth-change', syncUser);
+    window.addEventListener('storage', syncUser);
+    return () => {
+      window.removeEventListener('auth-change', syncUser);
+      window.removeEventListener('storage', syncUser);
+    };
+  }, []);
+
+  // Pre-fill the required delivery date with today's local date.
+  useEffect(() => {
+    const syncToday = () => {
+      const now = new Date();
+      const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60_000)
+        .toISOString()
+        .slice(0, 10);
+      setToday(localDate);
+      setDeliveryDate((prev) => prev || localDate);
+    };
+    syncToday();
+  }, []);
+
+  const sessionMissing = authChecked && !user && !getToken();
+  useEffect(() => {
+    if (sessionMissing) router.replace('/sign-in');
+  }, [router, sessionMissing]);
+
   useEffect(() => {
     let ignore = false;
     const fetchItem = async () => {
@@ -146,6 +185,15 @@ export default function MenuDetailsPage() {
     };
   }, [id]);
 
+  // Private route: guests go to sign-in as soon as the session check completes.
+  if (!authChecked || sessionMissing) {
+    return (
+      <div className="max-w-5xl mx-auto px-4 py-16 text-center text-gray-500">
+        {sessionMissing ? 'Redirecting to sign in...' : 'Checking your session...'}
+      </div>
+    );
+  }
+
   if (loading) {
     return <div className="max-w-5xl mx-auto px-4 py-16 text-center text-gray-500">Loading pizza details...</div>;
   }
@@ -188,6 +236,11 @@ export default function MenuDetailsPage() {
       return;
     }
 
+    if (!deliveryDate) {
+      toast.error('Please choose a delivery date.');
+      return;
+    }
+
     setSubmitting(true);
     setError('');
     try {
@@ -206,6 +259,8 @@ export default function MenuDetailsPage() {
           customerPhone: phone,
           address,
           deliveryAddress: address,
+          deliveryDate,
+          specialInstructions: specialInstructions.trim(),
           paymentMethod,
         }),
       });
@@ -479,6 +534,38 @@ export default function MenuDetailsPage() {
                   onChange={(e) => setAddress(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-200 text-sm focus:outline-none focus:border-[#E20001]"
                   required
+                />
+              </div>
+
+              <div>
+                <label htmlFor="menu-delivery-date" className="block text-xs font-bold text-gray-700 mb-1.5">
+                  Delivery Date
+                </label>
+                <div className="relative">
+                  <CalendarDays className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    id="menu-delivery-date"
+                    type="date"
+                    min={today}
+                    value={deliveryDate}
+                    onChange={(e) => setDeliveryDate(e.target.value)}
+                    className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-white border border-gray-200 text-sm focus:outline-none focus:border-[#E20001]"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="menu-special-instructions" className="block text-xs font-bold text-gray-700 mb-1.5">
+                  Special Instructions <span className="font-medium text-gray-400">(optional)</span>
+                </label>
+                <textarea
+                  id="menu-special-instructions"
+                  rows={2}
+                  placeholder="e.g. Extra spicy, no onions, call before arrival"
+                  value={specialInstructions}
+                  onChange={(e) => setSpecialInstructions(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-200 text-sm focus:outline-none focus:border-[#E20001] resize-none"
                 />
               </div>
 

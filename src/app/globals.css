@@ -1,18 +1,84 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Class-based dark mode driven by ThemeProvider (<html class="dark">). */
+@custom-variant dark (&:is(.dark *));
+
 @layer base {
   :root {
     --brand-red: #e20001;
     --brand-red-dark: #db0007;
     --brand-cream: #fffdfb;
+
+    /* Semantic surface tokens */
+    --background: #ffffff;
+    --surface: #ffffff;
+    --surface-alt: #fafafa;
+    --surface-muted: #f3f4f6;
+    --foreground: #1a1a1a;
+    --muted-foreground: #6b7280;
+    --border: #e5e7eb;
+    color-scheme: light;
+  }
+
+  .dark {
+    --brand-red: #ff4d4d;
+    --brand-red-dark: #e20001;
+    --brand-cream: #16191f;
+
+    --background: #0e1116;
+    --surface: #1a1e26;
+    --surface-alt: #212630;
+    --surface-muted: #2a303b;
+    --foreground: #f4f5f7;
+    --muted-foreground: #a9b0bc;
+    --border: #343b47;
+    color-scheme: dark;
   }
 
   body {
-    background-color: #ffffff;
-    color: #1a1a1a;
+    background-color: var(--background);
+    color: var(--foreground);
+    min-height: 100vh;
+    transition: background-color 250ms ease, color 250ms ease;
   }
 }
+
+/*
+ * The existing UI uses Tailwind's static palette utilities. These scoped
+ * overrides remap those utilities to the semantic tokens above whenever the
+ * dark class is active, so every page/table/dialog follows the theme without
+ * duplicating color logic in each component.
+ */
+.dark [class~="bg-white"] { background-color: var(--surface); }
+.dark [class~="bg-white/80"] { background-color: color-mix(in srgb, var(--surface) 85%, transparent); }
+.dark [class~="bg-white/95"] { background-color: color-mix(in srgb, var(--surface) 95%, transparent); }
+.dark [class~="bg-[#FAFAFA]"] { background-color: var(--surface-alt); }
+.dark [class~="bg-[#FFFDFB]"] { background-color: var(--surface-alt); }
+.dark [class~="bg-gray-50"] { background-color: var(--surface-alt); }
+.dark [class~="bg-gray-100"] { background-color: var(--surface-muted); }
+.dark [class~="bg-red-50"],
+.dark [class~="bg-red-50/70"] { background-color: rgb(226 0 1 / 14%); }
+.dark [class~="hover:bg-red-50"]:hover { background-color: rgb(226 0 1 / 20%); }
+.dark [class~="hover:bg-gray-50"]:hover { background-color: var(--surface-muted); }
+.dark [class~="hover:bg-gray-100"]:hover { background-color: var(--surface-muted); }
+
+.dark [class~="text-gray-900"] { color: var(--foreground); }
+.dark [class~="text-gray-800"] { color: #e2e5ea; }
+.dark [class~="text-gray-700"] { color: #cfd4dd; }
+.dark [class~="text-gray-600"] { color: #b7bec9; }
+.dark [class~="text-gray-500"] { color: var(--muted-foreground); }
+.dark [class~="text-gray-400"] { color: #8b94a3; }
+.dark [class~="text-[#E20001]"] { color: var(--brand-red); }
+.dark [class~="hover:text-[#E20001]"]:hover { color: var(--brand-red); }
+
+.dark [class~="border-gray-100"],
+.dark [class~="border-gray-200"],
+.dark [class~="border-neutral-200/80"],
+.dark [class~="border-red-100"] { border-color: var(--border); }
+
+.dark [class~="divide-gray-100"] > :not([hidden]) ~ :not([hidden]) { border-color: var(--border); }
+.dark [class~="placeholder:text-gray-400"]::placeholder { color: #8b94a3; }
 
 .pizza-glow {
   box-shadow: 0 8px 25px -5px rgba(226, 0, 1, 0.35);

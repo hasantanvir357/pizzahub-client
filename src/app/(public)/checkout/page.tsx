@@ -14,6 +14,7 @@ import {
   User,
   Phone,
   MapPin,
+  CalendarDays,
   StickyNote,
   Zap,
 } from 'lucide-react';
@@ -66,6 +67,8 @@ function CheckoutPageInner() {
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
+  const [today, setToday] = useState('');
+  const [deliveryDate, setDeliveryDate] = useState('');
   const [deliveryNotes, setDeliveryNotes] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('Cash on Delivery');
   const [cardNumber, setCardNumber] = useState('');
@@ -84,6 +87,19 @@ function CheckoutPageInner() {
     syncUser();
     window.addEventListener('auth-change', syncUser);
     return () => window.removeEventListener('auth-change', syncUser);
+  }, []);
+
+  // Delivery date can never be in the past; pre-fill with today's local date.
+  useEffect(() => {
+    const syncToday = () => {
+      const now = new Date();
+      const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60_000)
+        .toISOString()
+        .slice(0, 10);
+      setToday(localDate);
+      setDeliveryDate((prev) => prev || localDate);
+    };
+    syncToday();
   }, []);
 
   const guardedRef = useRef(false);
@@ -129,9 +145,9 @@ function CheckoutPageInner() {
   );
 
   const autoFillDemoCard = () => {
-    setCardNumber('4532 1111 2222 8890');
+    setCardNumber('4242 4242 4242 4242');
     setCardExpiry('12/28');
-    setCardCvv('842');
+    setCardCvv('123');
     toast.success('Demo card details filled in!');
   };
 
@@ -148,6 +164,10 @@ function CheckoutPageInner() {
     }
     if (!trimmedAddress) {
       toast.error('Please provide a delivery address.');
+      return;
+    }
+    if (!deliveryDate) {
+      toast.error('Please choose a delivery date.');
       return;
     }
     if (isCardPayment) {
@@ -196,7 +216,9 @@ function CheckoutPageInner() {
               customerEmail,
               phone: trimmedPhone,
               address: trimmedAddress,
+              deliveryDate,
               deliveryNotes: deliveryNotes.trim(),
+              specialInstructions: deliveryNotes.trim(),
               paymentMethod,
             }),
           });
@@ -366,8 +388,26 @@ function CheckoutPageInner() {
           </div>
 
           <div>
+            <label htmlFor="checkout-date" className="block text-xs font-bold text-gray-700 mb-1.5">
+              Delivery Date
+            </label>
+            <div className="relative">
+              <CalendarDays className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                id="checkout-date"
+                type="date"
+                min={today}
+                value={deliveryDate}
+                onChange={(e) => setDeliveryDate(e.target.value)}
+                required
+                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-white border border-gray-200 text-sm focus:outline-none focus:border-[#E20001]"
+              />
+            </div>
+          </div>
+
+          <div>
             <label htmlFor="checkout-notes" className="block text-xs font-bold text-gray-700 mb-1.5">
-              Delivery Notes <span className="font-medium text-gray-400">(optional)</span>
+              Special Instructions <span className="font-medium text-gray-400">(optional)</span>
             </label>
             <div className="relative">
               <StickyNote className="absolute left-3.5 top-3 w-4 h-4 text-gray-400" />
@@ -485,7 +525,7 @@ function CheckoutPageInner() {
                           autoComplete="cc-number"
                           value={cardNumber}
                           onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
-                          placeholder="4532 1111 2222 8890"
+                          placeholder="4242 4242 4242 4242"
                           required
                           className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-white border border-neutral-200/80 text-sm font-mono tracking-wider focus:outline-none focus:border-[#E20001] transition-all duration-300"
                         />
@@ -520,7 +560,7 @@ function CheckoutPageInner() {
                         autoComplete="cc-csc"
                         value={cardCvv}
                         onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                        placeholder="842"
+                        placeholder="123"
                         required
                         className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-neutral-200/80 text-sm font-mono tracking-[0.2em] focus:outline-none focus:border-[#E20001] transition-all duration-300"
                       />

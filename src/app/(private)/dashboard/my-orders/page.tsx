@@ -24,6 +24,10 @@ const CANCEL_REASONS = [
   'Other',
 ];
 
+/** The API may return "Pending" or "pending" — accept both casings. */
+const isPending = (status?: string) => (status ?? '').trim().toLowerCase() === 'pending';
+const isCancelled = (status?: string) => (status ?? '').trim().toLowerCase() === 'cancelled';
+
 export default function MyOrdersPage() {
   const router = useRouter();
   const [orders, setOrders] = useState<OrderItem[]>([]);
@@ -46,7 +50,7 @@ export default function MyOrdersPage() {
       if (res.ok) {
         const data = await res.json();
         // Cancelled orders are hidden from the customer's order list.
-        setOrders((data.orders || []).filter((o: OrderItem) => o.status !== 'cancelled'));
+        setOrders((data.orders || []).filter((o: OrderItem) => !isCancelled(o.status)));
       }
       setLoading(false);
     };
@@ -154,7 +158,7 @@ export default function MyOrdersPage() {
                   </span>
                   <span className="text-base font-extrabold text-[#E20001]">${o.totalPrice}</span>
                 </div>
-                {o.status === 'pending' && (
+                {isPending(o.status) && (
                   <button
                     type="button"
                     onClick={() => openCancelModal(o)}
@@ -193,7 +197,7 @@ export default function MyOrdersPage() {
                         <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-red-50 text-[#E20001] capitalize">
                           {o.status}
                         </span>
-                        {o.status === 'pending' && (
+                        {isPending(o.status) && (
                           <button
                             type="button"
                             onClick={() => openCancelModal(o)}

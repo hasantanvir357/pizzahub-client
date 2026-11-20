@@ -3,10 +3,10 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Pizza, LayoutDashboard, LogOut, Menu, X, ChevronDown, ShoppingCart } from 'lucide-react';
+import { Pizza, LayoutDashboard, LogOut, Menu, X, ChevronDown, ShoppingCart, Moon, Sun } from 'lucide-react';
+import { useTheme } from '@/context/ThemeContext';
 import { AuthUser, clearAuthSession, getAuthUser } from '@/lib/auth-session';
 import { getAvatarUrl, handleAvatarError } from '@/lib/avatar';
-import PizzaSpinner from '@/components/shared/PizzaSpinner';
 import { useCart } from '@/context/CartContext';
 import CartDrawer from '@/components/shared/CartDrawer';
 import { toast } from 'sonner';
@@ -14,10 +14,10 @@ import { toast } from 'sonner';
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
+  const { resolvedTheme, toggleTheme, mounted } = useTheme();
   const { openCart, closeCart, itemCount } = useCart();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [signingOut, setSigningOut] = useState(false);
 
   const [userMenu, setUserMenu] = useState({ open: false, pathname });
   const userMenuOpen = userMenu.open && userMenu.pathname === pathname;
@@ -60,9 +60,6 @@ export default function Navbar() {
     setMobileOpen(false);
     // Refresh server-rendered UI (role badges, guarded routes) immediately.
     router.refresh();
-    // Route transition: hold the animated pizza spinner at its minimum display
-    // duration before navigating cleanly to the sign-in screen after fade-out.
-    setSigningOut(true);
   };
 
   const userInitial = user?.name?.charAt(0) ?? '?';
@@ -71,6 +68,21 @@ export default function Navbar() {
   const normalizedRole = user?.role?.toLowerCase();
   // Cart is for guests and the customer role only — never for admin/vendor.
   const showCart = !user || normalizedRole === 'customer' || normalizedRole === 'user';
+
+  // One toggle shared by the desktop actions and the mobile header. The icon is
+  // rendered only after hydration so the server and client markup always match.
+  const themeToggle = (
+    <button
+      type="button"
+      onClick={toggleTheme}
+      disabled={!mounted}
+      aria-label={mounted && resolvedTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+      title={mounted && resolvedTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+      className="w-9 h-9 shrink-0 rounded-full border border-neutral-200/80 bg-white text-gray-600 flex items-center justify-center transition-all duration-300 hover:text-[#E20001] hover:border-[#E20001]/60 hover:-translate-y-0.5 active:scale-95 disabled:opacity-60"
+    >
+      {mounted && resolvedTheme === 'dark' ? <Sun className="w-4.5 h-4.5" /> : <Moon className="w-4.5 h-4.5" />}
+    </button>
+  );
 
   return (
     <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-neutral-200/80 animate-from-top">
@@ -97,6 +109,8 @@ export default function Navbar() {
 
         {/* Auth Actions */}
         <div className="hidden md:flex items-center gap-3">
+          {themeToggle}
+
           {/* Cart Badge Button (guests & customers only) */}
           {showCart && (
             <button
@@ -195,10 +209,18 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* Mobile Toggle */}
-        <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden p-2 text-gray-700">
-          {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-        </button>
+        {/* Mobile Theme Toggle + Menu Toggle */}
+        <div className="md:hidden flex items-center gap-1.5">
+          {themeToggle}
+          <button
+            type="button"
+            onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+            className="p-2 text-gray-700"
+          >
+            {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Dropdown */}

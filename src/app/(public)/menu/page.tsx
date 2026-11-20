@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
@@ -9,12 +9,19 @@ import { ChevronLeft, ChevronRight, Search, SlidersHorizontal, ArrowRight } from
 
 const CATEGORIES = ['All', 'Classic Pizza', 'Meat Lovers', 'Veggie Delight', 'Sides & Drinks'];
 
+/** Location comes from the API when available, otherwise from the kitchen name. */
+const getItemLocation = (item: MenuItem) => item.location || item.restaurantName || '';
+
+const normalizeSort = (value: string | null) =>
+  value === 'price_asc' || value === 'price_desc' ? value : 'default';
+
 export default function BrowseMenuPage() {
   const searchParams = useSearchParams();
   const initialCategory = searchParams.get('category') || 'All';
 
   const [items, setItems] = useState<MenuItem[]>([]);
   const [offers, setOffers] = useState<MenuItem[]>([]);
+  const [locations, setLocations] = useState<string[]>([]);
   const [activeOfferIndex, setActiveOfferIndex] = useState(0);
   const [offerPaused, setOfferPaused] = useState(false);
   // Slide direction so auto-advance / next / prev each animate the correct way.
@@ -22,7 +29,8 @@ export default function BrowseMenuPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState(initialCategory);
-  const [sortBy, setSortBy] = useState('default');
+  const [sortBy, setSortBy] = useState(() => normalizeSort(searchParams.get('sort')));
+  const [location, setLocation] = useState(searchParams.get('location') || 'All');
 
   // Offers are fetched once so the banner stays stable while the grid filters.
   useEffect(() => {
@@ -33,7 +41,13 @@ export default function BrowseMenuPage() {
         if (res.ok) {
           const data = await res.json();
           const all: MenuItem[] = data.items || data || [];
-          if (!ignore) setOffers(all.filter((item) => item.isOffer === true));
+          if (!ignore) {
+            setOffers(all.filter((item) => item.isOffer === true));
+            const uniqueLocations = Array.from(
+              new Set(all.map(getItemLocation).filter((value) => value.length > 0))
+            ).sort((a, b) => a.localeCompare(b));
+            setLocations(uniqueLocations);
+          }
         }
       } catch {
         if (!ignore) setOffers([]);
@@ -79,6 +93,7 @@ export default function BrowseMenuPage() {
         const params = new URLSearchParams();
         if (search) params.set('search', search);
         if (category && category !== 'All') params.set('category', category);
+        if (location && location !== 'All') params.set('location', location);
         if (sortBy !== 'default') params.set('sort', sortBy);
 
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/menu?${params.toString()}`);
@@ -95,7 +110,19 @@ export default function BrowseMenuPage() {
 
     const timer = setTimeout(fetchMenus, 300);
     return () => clearTimeout(timer);
-  }, [search, category, sortBy]);
+  }, [search, category, location, sortBy]);
+
+  // Apply the sort/location locally as well: the API may ignore these params,
+  // but the grid must react instantly and deterministically.
+  const displayedItems = useMemo(() => {
+    const filtered =
+      location && location !== 'All'
+        ? items.filter((item) => getItemLocation(item) === location)
+        : [...items];
+    if (sortBy === 'price_asc') filtered.sort((a, b) => a.price - b.price);
+    if (sortBy === 'price_desc') filtered.sort((a, b) => b.price - a.price);
+    return filtered;
+  }, [items, location, sortBy]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -222,7 +249,7 @@ export default function BrowseMenuPage() {
 
       {/* Search, Category Tabs & Sort Bar */}
       <div className="bg-[#FFFDFB] p-4 sm:p-5 rounded-2xl border border-red-100 mb-8 space-y-4">
-        <div className="flex flex-col sm:flex-row gap-3 justify-between">
+        <div className="flex flex-col sm:flex-row gap-3 justify-between sm:items-end">
           {/* Search Input */}
           <div className="relative flex-1">
             <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5" />
@@ -235,18 +262,47 @@ export default function BrowseMenuPage() {
             />
           </div>
 
-          {/* Sort Dropdown */}
-          <div className="flex items-center gap-2">
-            <SlidersHorizontal className="w-4 h-4 text-gray-500 shrink-0" />
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-sm font-medium text-gray-700 focus:outline-none focus:border-[#E20001]"
-            >
-              <option value="default">Sort: Featured</option>
-              <option value="price_asc">Price: Low to High</option>
-              <option value="price_desc">Price: High to Low</option>
-            </select>
+          {/* Sort by Price + Location filters */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="sort-by-price" className="text-[11px] font-bold uppercase tracking-wide text-gray-500">
+                Sort by Price
+              </label>
+              <div className="flex items-center gap-2">
+                <SlidersHorizontal className="w-4 h-4 text-gray-500 shrink-0" />
+                <select
+                  id="sort-by-price"
+                  aria-label="Sort by Price"
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-sm font-medium text-gray-700 focus:outline-none focus:border-[#E20001]"
+                >
+                  <option value="default">Default</option>
+                  <option value="price_asc">Price: Low to High</option>
+                  <option value="price_desc">Price: High to Low</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="filter-location" className="text-[11px] font-bold uppercase tracking-wide text-gray-500">
+                Location
+              </label>
+              <select
+                id="filter-location"
+                aria-label="Filter by location"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                className="px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-sm font-medium text-gray-700 focus:outline-none focus:border-[#E20001]"
+              >
+                <option value="All">All Locations</option>
+                {locations.map((value) => (
+                  <option key={value} value={value}>
+                    {value}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
@@ -275,9 +331,9 @@ export default function BrowseMenuPage() {
             <div key={n} className="h-80 rounded-2xl bg-gray-100 animate-pulse" />
           ))}
         </div>
-      ) : items.length > 0 ? (
+      ) : displayedItems.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {items.map((item, index) => (
+          {displayedItems.map((item, index) => (
             <MenuCard key={item._id} item={item} index={index} />
           ))}
         </div>

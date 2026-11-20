@@ -3,12 +3,12 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { ArrowRight, Check, Heart } from 'lucide-react';
-import { getAuthUser, AuthUser } from '@/lib/auth-session';
+import { getAuthUser, getToken, AuthUser } from '@/lib/auth-session';
 import { cartItemKey, useCart } from '@/context/CartContext';
+import { useWishlist } from '@/context/WishlistContext';
 import { toast } from 'sonner';
-
-const FAVORITES_KEY = 'pizzahub_favorites';
 
 export interface MenuItem {
   _id: string;
@@ -18,6 +18,8 @@ export interface MenuItem {
   category: string;
   image: string;
   restaurantName?: string;
+  /** Optional city/area supplied by the API; falls back to the kitchen name. */
+  location?: string;
   toppings?: string[];
   isPopular?: boolean;
   isOffer?: boolean;
@@ -26,9 +28,11 @@ export interface MenuItem {
 }
 
 export default function MenuCard({ item, index = 0 }: { item: MenuItem; index?: number }) {
+  const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [favorite, setFavorite] = useState(false);
   const { items, addItem } = useCart();
+  const { isFavorite, toggleFavorite } = useWishlist();
+  const favorite = isFavorite(item._id);
 
   useEffect(() => {
     const syncUser = () => setUser(getAuthUser());
@@ -37,43 +41,17 @@ export default function MenuCard({ item, index = 0 }: { item: MenuItem; index?: 
     return () => window.removeEventListener('auth-change', syncUser);
   }, []);
 
-  // Sync heart state with the locally stored favorites list (via a callback —
-  // the effect body itself never calls setState synchronously).
-  useEffect(() => {
-    const syncFavorite = () => {
-      try {
-        const raw = localStorage.getItem(FAVORITES_KEY);
-        if (!raw) return;
-        const list = JSON.parse(raw);
-        if (Array.isArray(list)) setFavorite(list.includes(item._id));
-      } catch {
-        // Ignore malformed localStorage values.
-      }
-    };
-    syncFavorite();
-  }, [item._id]);
+  const handleFavoriteToggle = () => {
+    toggleFavorite(item._id);
+    if (favorite) toast('Removed from favorites');
+    else toast.success('Added to favorites');
+  };
 
-  const toggleFavorite = () => {
-    try {
-      const raw = localStorage.getItem(FAVORITES_KEY);
-      let list: string[] = [];
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) list = parsed;
-      }
-
-      if (favorite) {
-        list = list.filter((id) => id !== item._id);
-        setFavorite(false);
-        toast('Removed from favorites');
-      } else {
-        list = Array.from(new Set([...list, item._id]));
-        setFavorite(true);
-        toast.success('Added to favorites');
-      }
-      localStorage.setItem(FAVORITES_KEY, JSON.stringify(list));
-    } catch {
-      // localStorage may be unavailable (e.g. private mode); fail silently.
+  /** Menu details are for signed-in users only. */
+  const handleViewDetails = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    if (!getAuthUser() && !getToken()) {
+      event.preventDefault();
+      router.push('/sign-in');
     }
   };
 
@@ -123,7 +101,7 @@ export default function MenuCard({ item, index = 0 }: { item: MenuItem; index?: 
         {/* Wishlist Toggle */}
         <button
           type="button"
-          onClick={toggleFavorite}
+          onClick={handleFavoriteToggle}
           aria-label={favorite ? 'Remove from favorites' : 'Add to favorites'}
           aria-pressed={favorite}
           className={`absolute top-3 right-3 flex items-center justify-center w-9 h-9 rounded-full shadow-md transition-all duration-300 ${
@@ -164,6 +142,7 @@ export default function MenuCard({ item, index = 0 }: { item: MenuItem; index?: 
           {isVendorOrAdmin ? (
             <Link
               href={`/menu/${item._id}`}
+              onClick={handleViewDetails}
               className="group inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#E20001] hover:bg-[#DB0007] text-white text-xs font-bold transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-lg"
             >
               View Details
@@ -191,10 +170,11 @@ export default function MenuCard({ item, index = 0 }: { item: MenuItem; index?: 
                 )}
               </button>
               <Link
-              href={`/menu/${item._id}`}
-              className="group inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#E20001] hover:bg-[#DB0007] text-white text-xs font-bold transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-lg"
-            >
-              Order Now
+                href={`/menu/${item._id}`}
+                onClick={handleViewDetails}
+                className="group inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#E20001] hover:bg-[#DB0007] text-white text-xs font-bold transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-lg"
+              >
+                Order Now
               <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" />
               </Link>
             </>
