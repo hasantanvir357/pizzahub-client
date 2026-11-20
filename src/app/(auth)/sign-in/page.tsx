@@ -90,6 +90,8 @@ export default function SignInPage() {
         }
         if (cancelled) return;
         toast.success('Welcome back! Signing you in...');
+        // Re-render server shells (Navbar roles, route guards) immediately.
+        router.refresh();
         router.replace('/');
       } catch (err: unknown) {
         if (cancelled) return;
@@ -174,6 +176,9 @@ export default function SignInPage() {
       if (data.token && data.user) {
         setAuthSession(data.token, data.user);
       }
+      // Broadcast the new session to every listener and refresh server UI
+      // so role badges / guarded routes update without a hard refresh.
+      router.refresh();
       toast.success('Welcome back! Signing you in...');
       await new Promise((resolve) => setTimeout(resolve, 1000));
       router.replace('/');

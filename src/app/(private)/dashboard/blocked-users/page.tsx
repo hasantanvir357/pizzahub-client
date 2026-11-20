@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { ShieldCheck } from 'lucide-react';
 import { getToken } from '@/lib/auth-session';
 import { toast } from 'sonner';
@@ -16,6 +17,7 @@ interface BlockedUser {
 }
 
 export default function BlockedUsersPage() {
+  const router = useRouter();
   const [users, setUsers] = useState<BlockedUser[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -49,6 +51,7 @@ export default function BlockedUsersPage() {
     });
     if (res.ok) {
       setUsers((prev) => prev.filter((user) => user._id !== id));
+      router.refresh();
       toast.success('User unblocked.');
     } else {
       toast.error('Failed to unblock user.');

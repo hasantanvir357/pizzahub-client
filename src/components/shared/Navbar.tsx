@@ -22,7 +22,11 @@ export default function Navbar() {
     const syncUser = () => setUser(getAuthUser());
     syncUser();
     window.addEventListener('auth-change', syncUser);
-    return () => window.removeEventListener('auth-change', syncUser);
+    window.addEventListener('storage', syncUser);
+    return () => {
+      window.removeEventListener('auth-change', syncUser);
+      window.removeEventListener('storage', syncUser);
+    };
   }, []);
 
   // Close the avatar dropdown on outside click.
@@ -46,6 +50,8 @@ export default function Navbar() {
     toast.success('Logged out successfully!');
     clearAuthSession();
     setUser(null);
+    // Refresh server-rendered UI (role badges, guarded routes) immediately.
+    router.refresh();
     setTimeout(() => router.push('/sign-in'), 800);
   };
 

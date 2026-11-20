@@ -94,6 +94,7 @@ export default function SignUpPage() {
         }
         if (cancelled) return;
         toast.success('Account ready! Redirecting...');
+        router.refresh();
         router.replace('/');
       } catch (err: unknown) {
         if (cancelled) return;
@@ -205,6 +206,8 @@ export default function SignUpPage() {
       if (data.token && data.user) {
         setAuthSession(data.token, data.user);
       }
+      // Broadcast the session + refresh server UI so Navbar roles update now.
+      router.refresh();
       toast.success('Account created successfully! Redirecting...');
       await new Promise((resolve) => setTimeout(resolve, 1000));
       router.replace('/');

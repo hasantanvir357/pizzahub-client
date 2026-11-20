@@ -108,6 +108,7 @@ export default function AddMenuPage() {
 
       toast.success('New pizza submitted for admin approval!');
       await new Promise((resolve) => setTimeout(resolve, 1000));
+      router.refresh();
       router.push('/dashboard/my-menu');
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Something went wrong';

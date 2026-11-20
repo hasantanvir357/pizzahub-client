@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { getToken } from '@/lib/auth-session';
 import { Check, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -15,6 +16,7 @@ interface MenuItem {
 }
 
 export default function ManageMenuPage() {
+  const router = useRouter();
   const [items, setItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -47,6 +49,7 @@ export default function ManageMenuPage() {
     });
     if (res.ok) {
       setItems((prev) => prev.map((item) => (item._id === id ? { ...item, status: 'approved' } : item)));
+      router.refresh();
       toast.success('Menu item approved!');
     } else {
       toast.error('Failed to approve menu item.');
@@ -60,6 +63,7 @@ export default function ManageMenuPage() {
     });
     if (res.ok) {
       setItems((prev) => prev.filter((item) => item._id !== id));
+      router.refresh();
       toast.success('Menu item removed.');
     } else {
       toast.error('Failed to remove menu item.');

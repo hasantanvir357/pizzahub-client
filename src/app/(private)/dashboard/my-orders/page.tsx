@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { X } from 'lucide-react';
 import { getToken } from '@/lib/auth-session';
 import { toast } from 'sonner';
@@ -24,6 +25,7 @@ const CANCEL_REASONS = [
 ];
 
 export default function MyOrdersPage() {
+  const router = useRouter();
   const [orders, setOrders] = useState<OrderItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -109,6 +111,7 @@ export default function MyOrdersPage() {
       // Cancelled orders are removed from the list immediately.
       setOrders((prev) => prev.filter((order) => order._id !== cancelTarget._id));
       closeCancelModal();
+      router.refresh();
       toast.success('Order cancelled.');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to cancel order';

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { getToken } from "@/lib/auth-session";
 import { toast } from "sonner";
 
@@ -17,6 +18,7 @@ interface KitchenOrder {
 }
 
 export default function CustomerOrdersPage() {
+  const router = useRouter();
   const [orders, setOrders] = useState<KitchenOrder[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -50,16 +52,20 @@ export default function CustomerOrdersPage() {
       return;
     }
     toast.success("Order status updated!");
+    // Keep server-rendered shells (Overview history, stats) in sync at once.
+    router.refresh();
     setOrders((prev) =>
-      status === "cancelled"
-        ? // Cancelled orders leave the active table right away.
-          prev.filter((o) => o._id !== id)
+      // Finished orders leave the active kitchen list immediately — the same
+      // instant removal "Cancelled" already had, so no hard refresh is needed.
+      // They remain visible in the Overview "Recent Orders" history.
+      status === "cancelled" || status === "delivered"
+        ? prev.filter((o) => o._id !== id)
         : prev.map((o) => (o._id === id ? { ...o, status } : o))
     );
   };
 
-  // Active table never shows cancelled orders (they stay in Overview history).
-  const activeOrders = orders.filter((o) => o.status !== "cancelled");
+  // Active table only shows in-flight orders: pending, preparing.
+  const activeOrders = orders.filter((o) => o.status !== "cancelled" && o.status !== "delivered");
 
   return (
     <div>

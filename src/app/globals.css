@@ -82,10 +82,10 @@
   animation: slideFromBottom 1100ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-/* ---- Menu offer banner: split slide-in transition ---- */
-@keyframes splitFromLeft {
+/* ---- Menu offer banner: directional split slide-in (500ms ease-out) ---- */
+@keyframes splitTextNext {
   from {
-    transform: translateX(-48px);
+    transform: translateX(-24px);
     opacity: 0;
   }
   to {
@@ -94,23 +94,55 @@
   }
 }
 
-@keyframes splitFromRight {
+@keyframes splitImageNext {
   from {
-    transform: translateX(48px) rotate(4deg) scale(0.94);
+    transform: translateX(24px) rotate(8deg);
     opacity: 0;
   }
   to {
-    transform: translateX(0) rotate(0deg) scale(1);
+    transform: translateX(0) rotate(0deg);
     opacity: 1;
   }
 }
 
+@keyframes splitTextPrev {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes splitImagePrev {
+  from {
+    transform: translateX(-24px) rotate(-8deg);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+/* Advancing forward: text glides in from the left, image from the right. */
 .split-from-left {
-  animation: splitFromLeft 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: splitTextNext 500ms ease-out both;
 }
 
 .split-from-right {
-  animation: splitFromRight 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: splitImageNext 500ms ease-out both;
+}
+
+/* Going back: mirrored directions for a natural feel. */
+.split-from-right-text {
+  animation: splitTextPrev 500ms ease-out both;
+}
+
+.split-from-left-image {
+  animation: splitImagePrev 500ms ease-out both;
 }
 
 /* ---- "Why Choose Us" feature animations ---- */

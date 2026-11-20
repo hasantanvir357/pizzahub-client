@@ -20,19 +20,25 @@ import {
   ReceiptText,
   Menu as MenuIcon,
   X,
+  Loader2,
 } from 'lucide-react';
-import { getAuthUser, clearAuthSession, AuthUser } from '@/lib/auth-session';
+import { getAuthUser, getToken, clearAuthSession, AuthUser } from '@/lib/auth-session';
 import { toast } from 'sonner';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
+  // Session hydration flag: the guard below must never race a still-loading
+  // session, otherwise a fast click on "Dashboard" logs the user out.
+  const [isLoading, setIsLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     const syncUser = () => setUser(getAuthUser());
+    // First sync reads localStorage synchronously — the session is hydrated.
     syncUser();
+    setIsLoading(false);
     window.addEventListener('auth-change', syncUser);
     window.addEventListener('storage', syncUser);
     return () => {
@@ -40,6 +46,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       window.removeEventListener('storage', syncUser);
     };
   }, [pathname]);
+
+  // Route protection: only after hydration finishes, and only when BOTH the
+  // stored user and the auth cookie are missing, do we send the visitor to
+  // /sign-in. Valid credentials are never cleared here (read-only checks).
+  useEffect(() => {
+    if (isLoading) return;
+    if (user || getToken()) return;
+    router.replace('/sign-in');
+  }, [isLoading, user, router]);
 
   // Close the mobile drawer whenever the route changes.
   useEffect(() => {
@@ -87,8 +102,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const handleLogout = () => {
     toast.success('Logged out successfully!');
     clearAuthSession();
+    // Re-sync server-rendered shells (Navbar role badges, route guards) at once.
+    router.refresh();
     setTimeout(() => router.push('/sign-in'), 800);
   };
+
+  // While the session hydrates — or while a genuine missing-session redirect
+  // is in flight — show a clean spinner instead of flashing the guest UI.
+  const sessionMissing = !isLoading && !user && !getToken();
+
+  if (isLoading || sessionMissing) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-[#FAFAFA] text-gray-900">
+        <Loader2 className="w-8 h-8 text-[#E20001] animate-spin" />
+        <p className="text-sm font-semibold text-gray-500">Verifying your session...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-[#FAFAFA] text-gray-900">

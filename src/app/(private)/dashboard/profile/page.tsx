@@ -1,10 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { getAuthUser, getToken, setAuthSession, AuthUser } from '@/lib/auth-session';
 import { toast } from 'sonner';
 
 export default function ProfilePage() {
+  const router = useRouter();
   const [user] = useState<AuthUser | null>(() => getAuthUser());
   const [name, setName] = useState(user?.name ?? '');
   const [restaurantName, setRestaurantName] = useState(user?.restaurantName ?? '');
@@ -125,6 +127,8 @@ export default function ProfilePage() {
       };
       const token = getToken();
       if (token) setAuthSession(token, updated);
+      // Push the new session (name/photo/role) to Navbar + server UI instantly.
+      router.refresh();
       setMessage('Profile updated successfully.');
       toast.success('Profile updated successfully!');
     } else {

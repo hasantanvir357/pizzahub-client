@@ -17,6 +17,8 @@ export default function BrowseMenuPage() {
   const [offers, setOffers] = useState<MenuItem[]>([]);
   const [activeOfferIndex, setActiveOfferIndex] = useState(0);
   const [offerPaused, setOfferPaused] = useState(false);
+  // Slide direction so auto-advance / next / prev each animate the correct way.
+  const [offerDir, setOfferDir] = useState<'next' | 'prev'>('next');
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState(initialCategory);
@@ -43,9 +45,14 @@ export default function BrowseMenuPage() {
     };
   }, []);
 
-  const showPrevOffer = () =>
+  const showPrevOffer = () => {
+    setOfferDir('prev');
     setActiveOfferIndex((prev) => (prev - 1 + offers.length) % offers.length);
-  const showNextOffer = () => setActiveOfferIndex((prev) => (prev + 1) % offers.length);
+  };
+  const showNextOffer = () => {
+    setOfferDir('next');
+    setActiveOfferIndex((prev) => (prev + 1) % offers.length);
+  };
 
   // Auto-advance the offer banner every 5 seconds; pause while hovering.
   // The effect re-runs after each slide change, which also restarts the 5s
@@ -53,6 +60,7 @@ export default function BrowseMenuPage() {
   useEffect(() => {
     if (offerPaused || offers.length <= 1) return;
     const timer = setInterval(() => {
+      setOfferDir('next');
       setActiveOfferIndex((prev) => (prev + 1) % offers.length);
     }, 5000);
     return () => clearInterval(timer);
@@ -105,7 +113,7 @@ export default function BrowseMenuPage() {
             {/* Offer Copy */}
             <div
               key={`offer-copy-${activeOffer._id}`}
-              className="flex-1 text-white min-w-0 split-from-left"
+              className={`flex-1 text-white min-w-0 ${offerDir === 'prev' ? 'split-from-right-text' : 'split-from-left'}`}
             >
               <div className="flex flex-wrap items-center gap-3">
                 <span className="px-3 py-1 rounded-full bg-white text-[#E20001] text-[11px] font-extrabold uppercase tracking-wider shadow-xs">
@@ -159,7 +167,10 @@ export default function BrowseMenuPage() {
                         <button
                           key={offer._id}
                           type="button"
-                          onClick={() => setActiveOfferIndex(index)}
+                          onClick={() => {
+                            setOfferDir(index > activeOfferIndex ? 'next' : 'prev');
+                            setActiveOfferIndex(index);
+                          }}
                           aria-label={`Show offer ${index + 1}`}
                           className={`h-2 rounded-full transition-all duration-300 ease-out ${
                             index === activeOfferIndex ? 'w-6 bg-white' : 'w-2 bg-white/50 hover:bg-white/80'
@@ -184,7 +195,9 @@ export default function BrowseMenuPage() {
             {/* Offer Image */}
             <div
               key={`offer-image-${activeOffer._id}`}
-              className="relative w-full sm:w-64 h-44 sm:h-44 shrink-0 rounded-2xl overflow-hidden ring-2 ring-white/40 split-from-right"
+              className={`relative w-full sm:w-64 h-44 sm:h-44 shrink-0 rounded-2xl overflow-hidden ring-2 ring-white/40 ${
+                offerDir === 'prev' ? 'split-from-left-image' : 'split-from-right'
+              }`}
             >
               <Image
                 src={activeOffer.image}

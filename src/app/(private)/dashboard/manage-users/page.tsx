@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { ShieldBan } from 'lucide-react';
 import { AuthUser, getAuthUser, getToken } from '@/lib/auth-session';
 import { toast } from 'sonner';
@@ -16,12 +17,22 @@ interface ManagedUser {
 }
 
 export default function ManageUsersPage() {
+  const router = useRouter();
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
 
+  // Keep the "current admin" identity in sync with the auth session so the
+  // self-protection checks are correct immediately after login/role changes.
   useEffect(() => {
-    setCurrentUser(getAuthUser());
+    const syncCurrentUser = () => setCurrentUser(getAuthUser());
+    syncCurrentUser();
+    window.addEventListener('auth-change', syncCurrentUser);
+    window.addEventListener('storage', syncCurrentUser);
+    return () => {
+      window.removeEventListener('auth-change', syncCurrentUser);
+      window.removeEventListener('storage', syncCurrentUser);
+    };
   }, []);
 
   useEffect(() => {
@@ -72,6 +83,7 @@ export default function ManageUsersPage() {
     });
     if (res.ok) {
       setUsers((prev) => prev.map((user) => (user._id === id ? { ...user, role } : user)));
+      router.refresh();
       toast.success('User role updated!');
     } else {
       toast.error('Failed to update user role.');
@@ -89,6 +101,7 @@ export default function ManageUsersPage() {
     });
     if (res.ok) {
       setUsers((prev) => prev.map((user) => (user._id === id ? { ...user, isBlocked: true } : user)));
+      router.refresh();
       toast.warning('User has been blocked.');
     } else {
       toast.error('Failed to block user.');

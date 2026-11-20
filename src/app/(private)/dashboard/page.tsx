@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getAuthUser, getToken } from '@/lib/auth-session';
+import { useRouter } from 'next/navigation';
+import { getAuthUser, getToken, AuthUser } from '@/lib/auth-session';
 import { BarChart3, DollarSign, ShoppingBag, Trash2, Utensils, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -38,11 +39,25 @@ const platformAnalytics = [
 ];
 
 export default function DashboardOverviewPage() {
-  const user = getAuthUser();
+  const router = useRouter();
+  // Reactive identity: re-read on auth changes so role/restaurant badges never
+  // require a hard refresh after login or profile updates.
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [stats, setStats] = useState<Record<string, number>>({});
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [clearingHistory, setClearingHistory] = useState(false);
+
+  useEffect(() => {
+    const syncUser = () => setUser(getAuthUser());
+    syncUser();
+    window.addEventListener('auth-change', syncUser);
+    window.addEventListener('storage', syncUser);
+    return () => {
+      window.removeEventListener('auth-change', syncUser);
+      window.removeEventListener('storage', syncUser);
+    };
+  }, []);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -75,6 +90,7 @@ export default function DashboardOverviewPage() {
       });
       if (res.ok) {
         setRecentOrders([]);
+        router.refresh();
         toast.success('Overview history cleared.');
       } else {
         toast.error('Failed to clear overview history.');
@@ -94,6 +110,7 @@ export default function DashboardOverviewPage() {
       });
       if (res.ok) {
         setRecentOrders((prev) => prev.filter((o) => o._id !== id));
+        router.refresh();
         toast.success('History log deleted.');
       } else {
         toast.error('Failed to delete history log.');

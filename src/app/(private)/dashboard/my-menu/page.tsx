@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { getAuthUser, getToken, AuthUser } from '@/lib/auth-session';
 import { Trash2 } from 'lucide-react';
 import Image from 'next/image';
@@ -22,6 +23,7 @@ interface VendorMenu {
 }
 
 export default function MyMenuPage() {
+  const router = useRouter();
   const [items, setItems] = useState<VendorMenu[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -73,6 +75,7 @@ export default function MyMenuPage() {
       return;
     }
     setItems((prev) => prev.filter((item) => item._id !== id));
+    router.refresh();
     toast.success('Menu item deleted.');
   };
 
