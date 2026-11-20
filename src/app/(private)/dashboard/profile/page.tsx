@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getAuthUser, getToken, setAuthSession, AuthUser } from '@/lib/auth-session';
+import { getAvatarUrl, handleAvatarError } from '@/lib/avatar';
 import { toast } from 'sonner';
 
 export default function ProfilePage() {
@@ -147,14 +148,16 @@ export default function ProfilePage() {
       <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-gray-100 p-6 space-y-5">
         {/* Avatar Preview & Optional Profile Photo */}
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full overflow-hidden bg-red-50 border border-red-100 flex items-center justify-center shrink-0 transition-all duration-300">
-            {image ? (
-              <img src={image} alt={name || 'Profile photo'} className="w-full h-full object-cover" />
-            ) : (
-              <span className="w-10 h-10 rounded-full bg-[#E20001] text-white text-lg font-bold flex items-center justify-center">
-                {user?.name?.charAt(0) ?? '?'}
-              </span>
-            )}
+          <div className="relative w-16 h-16 rounded-full overflow-hidden bg-red-50 border border-red-100 shrink-0 transition-all duration-300">
+            <span className="absolute inset-0 flex items-center justify-center rounded-full bg-[#E20001] text-white text-lg font-bold">
+              {user?.name?.charAt(0) ?? '?'}
+            </span>
+            <img
+              src={image || getAvatarUrl(user)}
+              alt={name || 'Profile photo'}
+              onError={(e) => handleAvatarError(e, user?.role)}
+              className="relative w-full h-full object-cover"
+            />
           </div>
           <div>
             <label htmlFor="profile-photo" className="block text-xs font-bold uppercase text-gray-500 mb-1.5">

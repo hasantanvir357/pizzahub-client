@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ShieldBan } from 'lucide-react';
 import { AuthUser, getAuthUser, getToken } from '@/lib/auth-session';
+import { getAvatarUrl, handleAvatarError } from '@/lib/avatar';
 import { toast } from 'sonner';
 
 type UserRole = 'customer' | 'vendor' | 'admin';
@@ -14,6 +15,8 @@ interface ManagedUser {
   email: string;
   role: UserRole;
   isBlocked?: boolean;
+  image?: string | null;
+  avatar?: string | null;
 }
 
 export default function ManageUsersPage() {
@@ -133,7 +136,17 @@ export default function ManageUsersPage() {
                   key={user._id}
                   className="transition-all duration-300 ease-out hover:bg-red-50/40"
                 >
-                  <td className="px-5 py-3.5 font-bold text-gray-900">{user.name}</td>
+                  <td className="px-5 py-3.5">
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={getAvatarUrl(user)}
+                        alt={user.name}
+                        onError={(e) => handleAvatarError(e, user.role)}
+                        className="w-9 h-9 rounded-full object-cover border border-neutral-200/80 shrink-0"
+                      />
+                      <span className="font-bold text-gray-900">{user.name}</span>
+                    </div>
+                  </td>
                   <td className="px-5 py-3.5 text-gray-600">{user.email}</td>
                   <td className="px-5 py-3.5">
                     {isSelf(user) ? (

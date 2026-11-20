@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { Pizza, LayoutDashboard, LogOut, Menu, X, ChevronDown, ShoppingCart } from 'lucide-react';
 import { AuthUser, clearAuthSession, getAuthUser } from '@/lib/auth-session';
+import { getAvatarUrl, handleAvatarError } from '@/lib/avatar';
 import { useCart } from '@/context/CartContext';
 import CartDrawer from '@/components/shared/CartDrawer';
 import { toast } from 'sonner';
@@ -109,15 +109,17 @@ export default function Navbar() {
                 aria-expanded={userMenuOpen}
                 className="flex items-center gap-2 pl-1 pr-3 py-1.5 rounded-full bg-red-50 border border-red-100 hover:border-[#E20001]/60 transition-all duration-300"
               >
-                {user.image ? (
-                  <span className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-[#E20001]/30 shrink-0">
-                    <Image src={user.image} alt={user.name} width={32} height={32} className="w-full h-full object-cover" />
-                  </span>
-                ) : (
-                  <span className="w-8 h-8 rounded-full bg-[#E20001] text-white text-xs font-bold flex items-center justify-center shrink-0">
+                <span className="relative w-8 h-8 rounded-full overflow-hidden ring-2 ring-[#E20001]/30 shrink-0 bg-[#E20001]">
+                  <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white">
                     {userInitial}
                   </span>
-                )}
+                  <img
+                    src={getAvatarUrl(user)}
+                    alt={user.name}
+                    onError={(e) => handleAvatarError(e, user.role)}
+                    className="relative w-full h-full object-cover"
+                  />
+                </span>
                 <span className="text-xs font-bold text-gray-800 max-w-[140px] truncate">{user.name}</span>
                 <ChevronDown
                   className={`w-3.5 h-3.5 text-[#E20001] transition-transform duration-200 ${userMenuOpen ? 'rotate-180' : ''}`}

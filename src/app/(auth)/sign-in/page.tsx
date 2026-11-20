@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { getAuthUser, setAuthSession } from "@/lib/auth-session";
+import { getDefaultAvatar } from "@/lib/avatar";
 import { authClient } from "@/lib/auth-client";
 import { toast } from 'sonner';
 
@@ -76,7 +77,7 @@ export default function SignInPage() {
             id: session.user.id,
             email: session.user.email,
             name: session.user.name,
-            image: session.user.image ?? undefined,
+            image: session.user.image || getDefaultAvatar(role),
             role,
             restaurantName,
           }),

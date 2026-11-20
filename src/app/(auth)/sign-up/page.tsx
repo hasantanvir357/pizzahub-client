@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { User, Store, Upload, Loader2 } from 'lucide-react';
 import { getAuthUser, setAuthSession } from "@/lib/auth-session";
+import { getDefaultAvatar } from "@/lib/avatar";
 import { authClient } from "@/lib/auth-client";
 import { toast } from 'sonner';
 
@@ -80,7 +81,7 @@ export default function SignUpPage() {
             id: session.user.id,
             email: session.user.email,
             name: session.user.name,
-            image: session.user.image ?? undefined,
+            image: session.user.image || getDefaultAvatar(role),
             role,
             restaurantName,
           }),
@@ -196,7 +197,7 @@ export default function SignUpPage() {
           password,
           role,
           restaurantName: role === 'vendor' ? restaurantName : undefined,
-          image: avatarUrl,
+          image: avatarUrl || getDefaultAvatar(role),
         }),
       });
 

@@ -5,6 +5,8 @@ export interface AuthUser {
   role: 'customer' | 'vendor' | 'admin';
   restaurantName?: string | null;
   image?: string;
+  /** Alternative avatar field some API payloads return. */
+  avatar?: string | null;
   plan?: 'free' | 'premium';
 }
 

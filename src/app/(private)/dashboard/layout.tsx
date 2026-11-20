@@ -23,6 +23,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { getAuthUser, getToken, clearAuthSession, AuthUser } from '@/lib/auth-session';
+import { getAvatarUrl, handleAvatarError } from '@/lib/avatar';
 import { toast } from 'sonner';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -188,17 +189,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {/* User Info Card */}
           <div className="bg-red-50/70 border border-red-100 rounded-2xl p-4 mb-6">
             <div className="flex items-center gap-3">
-              {user?.image ? (
-                <img
-                  src={user.image}
-                  alt={user.name}
-                  className="w-10 h-10 rounded-full object-cover border border-red-200"
-                />
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-[#E20001] text-white font-bold flex items-center justify-center text-sm">
+              <span className="relative w-10 h-10 rounded-full overflow-hidden border border-red-200 bg-[#E20001] shrink-0">
+                <span className="absolute inset-0 flex items-center justify-center text-white font-bold text-sm">
                   {user?.name?.charAt(0)?.toUpperCase() || 'U'}
-                </div>
-              )}
+                </span>
+                <img
+                  src={getAvatarUrl(user)}
+                  alt={user?.name || 'User'}
+                  onError={(e) => handleAvatarError(e, user?.role)}
+                  className="relative w-full h-full object-cover"
+                />
+              </span>
               <div className="min-w-0">
                 <p className="font-bold text-sm text-gray-900 truncate">{user?.name || 'User'}</p>
                 <p className="text-xs text-gray-500 truncate">{user?.email || ''}</p>
