@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -10,16 +10,19 @@ import { useCart, type CartLineItem } from '@/context/CartContext';
 import { getAuthUser, getToken, type AuthUser } from '@/lib/auth-session';
 import { toast } from 'sonner';
 
+// `useSyncExternalStore` client-detection: no subscription, always `true`
+// in the browser, always `false during SSR` — hydration-safe portal gating
+// without a setState-in-effect.
+const emptySubscribe = () => () => {};
+const getClientSnapshot = () => true;
+const getServerSnapshot = () => false;
+
 export default function CartDrawer() {
   const router = useRouter();
   const { items, isOpen, closeCart, updateQuantity, removeItem, itemCount, subtotal } = useCart();
   const [user, setUser] = useState<AuthUser | null>(() => getAuthUser());
-  const [mounted, setMounted] = useState(false);
-
   // Portals require a real DOM node; render nothing until mounted on the client.
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useSyncExternalStore(emptySubscribe, getClientSnapshot, getServerSnapshot);
 
   useEffect(() => {
     const syncUser = () => setUser(getAuthUser());

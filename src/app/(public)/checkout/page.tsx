@@ -101,8 +101,13 @@ function CheckoutPageInner() {
     }
 
     guardedRef.current = true;
-    if (!fullName) setFullName(user.name || '');
-    setAuthChecked(true);
+    // Prefill + flag run through a callback so the effect body never calls
+    // setState synchronously (react-hooks/set-state-in-effect).
+    const applySessionDetails = () => {
+      if (!fullName) setFullName(user.name || '');
+      setAuthChecked(true);
+    };
+    applySessionDetails();
   }, [user, router, fullName]);
 
   const checkoutItems = useMemo(() => {

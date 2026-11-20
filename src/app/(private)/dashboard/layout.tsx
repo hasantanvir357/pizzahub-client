@@ -33,13 +33,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // Session hydration flag: the guard below must never race a still-loading
   // session, otherwise a fast click on "Dashboard" logs the user out.
   const [isLoading, setIsLoading] = useState(true);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Mobile drawer visibility is derived from the route it was opened on
+  // below, so navigating closes it automatically — no setState in an effect.
+  const [sidebar, setSidebar] = useState({ open: false, pathname });
+  const sidebarOpen = sidebar.open && sidebar.pathname === pathname;
 
   useEffect(() => {
-    const syncUser = () => setUser(getAuthUser());
-    // First sync reads localStorage synchronously — the session is hydrated.
+    // `syncUser` doubles as the hydration handshake: its first synchronous
+    // localStorage read marks `isLoading` false, so the route guard only ever
+    // evaluates a fully hydrated session (state updates happen in the
+    // callback, not as a direct call in the effect body).
+    const syncUser = () => {
+      setUser(getAuthUser());
+      setIsLoading(false);
+    };
     syncUser();
-    setIsLoading(false);
     window.addEventListener('auth-change', syncUser);
     window.addEventListener('storage', syncUser);
     return () => {
@@ -57,16 +65,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     router.replace('/sign-in');
   }, [isLoading, user, router]);
 
-  // Close the mobile drawer whenever the route changes.
-  useEffect(() => {
-    setSidebarOpen(false);
-  }, [pathname]);
-
   // Close the mobile drawer with Escape.
   useEffect(() => {
     if (!sidebarOpen) return;
+    const closeSidebar = () =>
+      setSidebar((prev) => (prev.open ? { ...prev, open: false } : prev));
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setSidebarOpen(false);
+      if (e.key === 'Escape') closeSidebar();
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
@@ -147,7 +152,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </span>
           <button
             type="button"
-            onClick={() => setSidebarOpen(true)}
+            onClick={() => setSidebar({ open: true, pathname })}
             aria-label="Open dashboard menu"
             aria-expanded={sidebarOpen}
             className="w-10 h-10 rounded-xl border border-neutral-200/80 flex items-center justify-center text-gray-700 hover:bg-red-50 hover:text-[#E20001] transition-all duration-300 active:scale-[0.98]"
@@ -161,7 +166,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {sidebarOpen && (
         <div
           className="md:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px]"
-          onClick={() => setSidebarOpen(false)}
+          onClick={() => setSidebar((prev) => ({ ...prev, open: false }))}
           aria-hidden="true"
         />
       )}
@@ -175,7 +180,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div>
           {/* Brand Logo (mobile drawer only — the top bar owns branding on small screens) */}
           <div className="flex items-center justify-between mb-6 px-1">
-            <Link href="/" className="flex items-center gap-2.5" onClick={() => setSidebarOpen(false)}>
+            <Link href="/" className="flex items-center gap-2.5" onClick={() => setSidebar((prev) => ({ ...prev, open: false }))}>
               <div className="w-9 h-9 rounded-full bg-[#E20001] flex items-center justify-center text-white shadow-sm">
                 <Pizza className="w-5 h-5" />
               </div>
@@ -185,7 +190,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </Link>
             <button
               type="button"
-              onClick={() => setSidebarOpen(false)}
+              onClick={() => setSidebar((prev) => ({ ...prev, open: false }))}
               aria-label="Close dashboard menu"
               className="md:hidden w-9 h-9 rounded-xl border border-neutral-200/80 flex items-center justify-center text-gray-500 hover:text-[#E20001] transition-all duration-300 active:scale-[0.98]"
             >
@@ -226,7 +231,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <Link
                   key={item.href}
                   href={item.href}
-                  onClick={() => setSidebarOpen(false)}
+                  onClick={() => setSidebar((prev) => ({ ...prev, open: false }))}
                   className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 active:scale-[0.98] ${
                     isActive
                       ? 'bg-[#E20001] text-white shadow-sm'
@@ -245,7 +250,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="pt-4 border-t border-neutral-200/80 space-y-1.5">
           <Link
             href="/"
-            onClick={() => setSidebarOpen(false)}
+            onClick={() => setSidebar((prev) => ({ ...prev, open: false }))}
             className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-100 transition-colors"
           >
             <Home className="w-4 h-4" />

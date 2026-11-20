@@ -16,7 +16,9 @@ export default function Navbar() {
   const { openCart, itemCount } = useCart();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  const [userMenu, setUserMenu] = useState({ open: false, pathname });
+  const userMenuOpen = userMenu.open && userMenu.pathname === pathname;
 
   useEffect(() => {
     const syncUser = () => setUser(getAuthUser());
@@ -29,27 +31,24 @@ export default function Navbar() {
     };
   }, []);
 
-  // Close the avatar dropdown on outside click.
+  // Close the avatar dropdown on outside click (plain state updater — no
+  // synchronous setState in an effect).
   useEffect(() => {
     if (!userMenuOpen) return;
     const onPointerDown = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       if (target.closest('[data-user-menu]')) return;
-      setUserMenuOpen(false);
+      setUserMenu((prev) => (prev.open ? { ...prev, open: false } : prev));
     };
     document.addEventListener('mousedown', onPointerDown);
     return () => document.removeEventListener('mousedown', onPointerDown);
   }, [userMenuOpen]);
 
-  // Close the avatar dropdown whenever the route changes.
-  useEffect(() => {
-    setUserMenuOpen(false);
-  }, [pathname]);
-
   const handleLogout = () => {
     toast.success('Logged out successfully!');
     clearAuthSession();
     setUser(null);
+    setUserMenu((prev) => ({ ...prev, open: false }));
     // Refresh server-rendered UI (role badges, guarded routes) immediately.
     router.refresh();
     setTimeout(() => router.push('/sign-in'), 800);
@@ -105,9 +104,9 @@ export default function Navbar() {
 
           {user && (
             <div className="relative" data-user-menu>
-                <button
-                  type="button"
-                  onClick={() => setUserMenuOpen((prev) => !prev)}
+              <button
+                type="button"
+                onClick={() => setUserMenu((prev) => ({ open: !prev.open, pathname }))}
                 aria-haspopup="menu"
                 aria-expanded={userMenuOpen}
                 className="flex items-center gap-2 pl-1 pr-3 py-1.5 rounded-full bg-red-50 border border-red-100 hover:border-[#E20001]/60 transition-all duration-300"
@@ -146,7 +145,7 @@ export default function Navbar() {
                   <div className="py-2">
                     <Link
                       href="/dashboard"
-                      onClick={() => setUserMenuOpen(false)}
+                      onClick={() => setUserMenu((prev) => ({ ...prev, open: false }))}
                       className="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-red-50 hover:text-[#E20001] transition-all duration-200"
                     >
                       <LayoutDashboard className="w-4 h-4" />

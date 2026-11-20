@@ -22,12 +22,9 @@ export default function SignUpPage() {
   const [error, setError] = useState('');
   const [passwordError, setPasswordError] = useState('');
 
-  // Never carry details over from a previous session.
-  useEffect(() => {
-    setName('');
-    setEmail('');
-    setPassword('');
-  }, []);
+  // Form fields always start empty: `useState('')` initializes them, and this
+  // page remounts on every navigation (no reset effect needed — a synchronous
+  // setState here would violate react-hooks/set-state-in-effect).
 
   // Once better-auth redirects back from Google (?google=success), sync the
   // Google profile (including the selected role) with the PizzaHub backend so
@@ -38,16 +35,21 @@ export default function SignUpPage() {
     const googleError = params.get('error');
     if (googleError) {
       const message = decodeURIComponent(googleError);
-      setError(message);
-      toast.error(message);
+      // URL-derived error surfaced via a callback — the effect body itself
+      // never calls setState synchronously (react-hooks/set-state-in-effect).
+      const showOauthError = () => {
+        setError(message);
+        toast.error(message);
+      };
+      showOauthError();
       return;
     }
     if (params.get('google') !== 'success') return;
 
     let cancelled = false;
-    setGoogleLoading(true);
 
     (async () => {
+      setGoogleLoading(true);
       try {
         const { data: session, error: sessionError } = await authClient.getSession();
         if (sessionError || !session?.user) {

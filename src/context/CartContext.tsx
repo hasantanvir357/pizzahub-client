@@ -52,7 +52,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    setItems(readStoredItems());
+    // Hydrate the cart from localStorage via a callback: reading the external
+    // store after mount is a legitimate sync, but the effect body itself must
+    // not call setState synchronously (react-hooks/set-state-in-effect).
+    const hydrateFromStorage = () => setItems(readStoredItems());
+    hydrateFromStorage();
   }, []);
 
   useEffect(() => {

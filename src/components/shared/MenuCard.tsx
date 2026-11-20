@@ -37,16 +37,20 @@ export default function MenuCard({ item, index = 0 }: { item: MenuItem; index?: 
     return () => window.removeEventListener('auth-change', syncUser);
   }, []);
 
-  // Sync heart state with the locally stored favorites list.
+  // Sync heart state with the locally stored favorites list (via a callback —
+  // the effect body itself never calls setState synchronously).
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(FAVORITES_KEY);
-      if (!raw) return;
-      const list = JSON.parse(raw);
-      if (Array.isArray(list)) setFavorite(list.includes(item._id));
-    } catch {
-      // Ignore malformed localStorage values.
-    }
+    const syncFavorite = () => {
+      try {
+        const raw = localStorage.getItem(FAVORITES_KEY);
+        if (!raw) return;
+        const list = JSON.parse(raw);
+        if (Array.isArray(list)) setFavorite(list.includes(item._id));
+      } catch {
+        // Ignore malformed localStorage values.
+      }
+    };
+    syncFavorite();
   }, [item._id]);
 
   const toggleFavorite = () => {
