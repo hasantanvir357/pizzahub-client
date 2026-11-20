@@ -1,36 +1,59 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🍕 PizzaHub — Online Pizza Ordering & Multi-Vendor Platform (Client)
 
-## Getting Started
+PizzaHub is a modern, full-stack food ordering and restaurant management web application built with **Next.js (App Router)**, **TypeScript**, **Tailwind CSS**, and **ShadCN UI**. It supports seamless multi-role workflows for **Customers**, **Vendors (Kitchen Partners)**, and **Admins**, complete with Google OAuth, persistent shopping cart, single/bulk checkout, and Stripe-powered vendor subscriptions.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 🌐 Live Links
+- **Live Client URL:** `https://your-pizzahub-client.vercel.app` *(Replace after Vercel deploy)*
+- **Live Server API URL:** `https://your-pizzahub-server.onrender.com` *(Replace after Render/Vercel deploy)*
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## ✨ Key Features
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 👤 Customer Experience
+- **Menu Discovery & Filtering:** Browse handcrafted pizzas by category, search dynamically, view detailed ingredients, sizes (`Regular`, `Medium`, `Large`), and customer ratings.
+- **Interactive Shopping Cart:** Slide-over Cart Drawer with real-time item count badges, quantity adjustments, item deletion, individual item checkout, and full-cart checkout.
+- **Dedicated Checkout Flow:** Protected `/checkout` page supporting both single-item and bulk-cart orders with delivery address validation.
+- **Wishlist & Reviews:** Save favorite pizzas to a personal wishlist and submit 1–5 star ratings and reviews on menu items.
+- **Order Tracking & Analytics:** View real-time order status updates and personal order spending analytics in the Customer Dashboard.
 
-## Learn More
+### 👨‍🍳 Vendor (Kitchen Partner) Panel
+- **Menu Management:** Create, view, and manage custom pizza listings with image uploads (ImgBB integration).
+- **Freemium Tier Enforcement:** Free plan vendors can list up to **3 active menu items** with clear upgrade prompts.
+- **Stripe Premium Subscription:** Seamless upgrade to **Premium ($19.99/mo)** via Stripe Checkout to unlock unlimited menu items and featured placement.
+- **Kitchen Order Fulfillment:** Track incoming customer orders and update preparation/delivery statuses.
 
-To learn more about Next.js, take a look at the following resources:
+### 🛡️ Admin Panel
+- **Menu Moderation:** Approve or reject newly submitted vendor pizza items before they go public.
+- **User & Role Management:** Promote or demote users across `Customer`, `Vendor`, and `Admin` roles, or block/unblock accounts with self-protection safeguards.
+- **Platform Analytics & Read-Only Transactions:** Monitor platform-wide orders, revenue metrics, and immutable Stripe/payment transaction logs.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🛠️ Tech Stack
+- **Framework:** Next.js 16 (App Router), React, TypeScript
+- **Styling & UI:** Tailwind CSS, ShadCN UI, Lucide Icons, Framer Motion
+- **Authentication:** Better Auth (Google OAuth) + Custom JWT Role Synchronization
+- **Payments:** Stripe Checkout
+- **Image Hosting:** ImgBB API
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🔐 Demo Credentials
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Role | Email | Password |
+| :--- | :--- | :--- |
+| **Admin** | `hasantanvir357@gmail.com` | `Admin@123` *(or Google Sign-In)* |
+| **Vendor** | `vendor@gmail.com` | `Vendor@123` |
+| **Customer** | `customer@gmail.com` | `Customer@123` |
+
+---
+
+## 🚀 Local Setup & Installation
+
+1. **Clone the repository:**
+   ```bash
+   git clone [https://github.com/your-username/pizzahub-client.git](https://github.com/your-username/pizzahub-client.git)
+   cd pizzahub-client
