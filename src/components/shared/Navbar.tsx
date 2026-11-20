@@ -56,8 +56,11 @@ export default function Navbar() {
   };
 
   const userInitial = user?.name?.charAt(0) ?? '?';
-  // Cart is for guests and customers only — never shown for admin/vendor panels.
-  const showCart = !user || user.role === 'customer';
+  // Role comparisons are case-insensitive so "admin"/"Admin", "vendor"/"Vendor"
+  // and customer roles ("customer"/"user") all resolve cleanly.
+  const normalizedRole = user?.role?.toLowerCase();
+  // Cart is for guests and the customer role only — never for admin/vendor.
+  const showCart = !user || normalizedRole === 'customer' || normalizedRole === 'user';
 
   return (
     <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-neutral-200/80 animate-from-top">

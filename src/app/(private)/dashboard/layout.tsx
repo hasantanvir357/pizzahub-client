@@ -72,7 +72,27 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [sidebarOpen]);
 
-  const role = user?.role || 'customer';
+  // ---- Session gate -----------------------------------------------------
+  // Nothing below may evaluate `user` / `user.role` until hydration has
+  // finished (`isLoading === false`) — this is what previously made a fast
+  // click on "Dashboard" look like an instant logout for every role.
+  // Read-only checks: valid credentials are never cleared on route change.
+  const sessionMissing = !isLoading && !user && !getToken();
+
+  if (isLoading || sessionMissing) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-[#FAFAFA] text-gray-900">
+        <Loader2 className="w-8 h-8 text-[#E20001] animate-spin" />
+        <p className="text-sm font-semibold text-gray-500">Verifying your session...</p>
+      </div>
+    );
+  }
+
+  // Normalize role casing so "admin"/"Admin", "vendor"/"Vendor" and
+  // "user"/"customer" all resolve cleanly without case-mismatch redirects.
+  const rawRole = (user?.role ?? '').trim().toLowerCase();
+  const role: 'admin' | 'vendor' | 'customer' =
+    rawRole === 'admin' ? 'admin' : rawRole === 'vendor' ? 'vendor' : 'customer';
 
   const navItems =
     role === 'admin'
@@ -107,19 +127,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     router.refresh();
     setTimeout(() => router.push('/sign-in'), 800);
   };
-
-  // While the session hydrates — or while a genuine missing-session redirect
-  // is in flight — show a clean spinner instead of flashing the guest UI.
-  const sessionMissing = !isLoading && !user && !getToken();
-
-  if (isLoading || sessionMissing) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-[#FAFAFA] text-gray-900">
-        <Loader2 className="w-8 h-8 text-[#E20001] animate-spin" />
-        <p className="text-sm font-semibold text-gray-500">Verifying your session...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-[#FAFAFA] text-gray-900">
