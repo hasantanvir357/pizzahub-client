@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
-  const { openCart, itemCount } = useCart();
+  const { openCart, closeCart, itemCount } = useCart();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -45,12 +45,20 @@ export default function Navbar() {
   }, [userMenuOpen]);
 
   const handleLogout = () => {
-    toast.success('Logged out successfully!');
-    clearAuthSession();
-    setUser(null);
+    // Close the avatar dropdown so no stale menu container lingers in the DOM.
     setUserMenu((prev) => ({ ...prev, open: false }));
+    toast.success('Logged out successfully!');
+    // Clear the auth cookie + all client-side session storage.
+    clearAuthSession();
+    // Reset local user state; the `auth-change` event re-syncs other listeners.
+    setUser(null);
+    // Close any open cart drawer so no overlay blocks the UI after logout.
+    closeCart();
+    // Close the mobile menu if it happens to be open.
+    setMobileOpen(false);
     // Refresh server-rendered UI (role badges, guarded routes) immediately.
     router.refresh();
+    // Navigate cleanly to the sign-in screen once cleanup settles.
     setTimeout(() => router.push('/sign-in'), 800);
   };
 
