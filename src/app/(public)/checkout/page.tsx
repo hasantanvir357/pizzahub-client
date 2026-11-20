@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { getAuthUser, getToken, type AuthUser } from '@/lib/auth-session';
+import PizzaSpinner from '@/components/shared/PizzaSpinner';
 import { toast } from 'sonner';
 
 function formatPrice(value: number) {
@@ -86,6 +87,7 @@ function CheckoutPageInner() {
   }, []);
 
   const guardedRef = useRef(false);
+  const orderSucceededRef = useRef(false);
   useEffect(() => {
     if (guardedRef.current) return;
 
@@ -215,8 +217,11 @@ function CheckoutPageInner() {
         clearCart();
       }
 
+      orderSucceededRef.current = true;
       toast.success('Order placed successfully!');
-      router.push('/dashboard/my-orders');
+      // The redirect to the dashboard happens from the pizza spinner's
+      // `onFinished` so the spinner completes its minimum display duration and
+      // fade-out before navigating away from checkout.
     } catch {
       toast.error('Network error while placing order. Please try again.');
     } finally {
@@ -253,6 +258,22 @@ function CheckoutPageInner() {
           Back to Menu
         </Link>
       </div>
+    );
+  }
+
+  if (submitting) {
+    // Full-screen animated pizza spinner while the order is being placed.
+    // It holds a minimum display duration (1200ms) and fades out before the
+    // redirect to the order dashboard fires via `onFinished`.
+    return (
+      <PizzaSpinner
+        active
+        minDisplayDuration={1200}
+        fadeOutDuration={300}
+        onFinished={() => {
+          if (orderSucceededRef.current) router.push('/dashboard/my-orders');
+        }}
+      />
     );
   }
 

@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Pizza, LayoutDashboard, LogOut, Menu, X, ChevronDown, ShoppingCart } from 'lucide-react';
 import { AuthUser, clearAuthSession, getAuthUser } from '@/lib/auth-session';
 import { getAvatarUrl, handleAvatarError } from '@/lib/avatar';
+import PizzaSpinner from '@/components/shared/PizzaSpinner';
 import { useCart } from '@/context/CartContext';
 import CartDrawer from '@/components/shared/CartDrawer';
 import { toast } from 'sonner';
@@ -16,6 +17,7 @@ export default function Navbar() {
   const { openCart, closeCart, itemCount } = useCart();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
 
   const [userMenu, setUserMenu] = useState({ open: false, pathname });
   const userMenuOpen = userMenu.open && userMenu.pathname === pathname;
@@ -58,8 +60,9 @@ export default function Navbar() {
     setMobileOpen(false);
     // Refresh server-rendered UI (role badges, guarded routes) immediately.
     router.refresh();
-    // Navigate cleanly to the sign-in screen once cleanup settles.
-    setTimeout(() => router.push('/sign-in'), 800);
+    // Route transition: hold the animated pizza spinner at its minimum display
+    // duration before navigating cleanly to the sign-in screen after fade-out.
+    setSigningOut(true);
   };
 
   const userInitial = user?.name?.charAt(0) ?? '?';
