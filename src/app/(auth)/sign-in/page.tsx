@@ -19,9 +19,15 @@ export default function SignInPage() {
   const [error, setError] = useState('');
   const [passwordError, setPasswordError] = useState('');
 
-  // Credentials always start empty: `useState('')` initializes them, and this
-  // page remounts on every navigation (no reset effect needed — a synchronous
-  // setState here would violate react-hooks/set-state-in-effect).
+  // Never carry credentials over from a previous session: reset the form
+  // fields to empty strings on mount so stale values never linger.
+  useEffect(() => {
+    const resetCredentials = () => {
+      setEmail('');
+      setPassword('');
+    };
+    resetCredentials();
+  }, []);
 
   // Once better-auth redirects back from Google (?google=success), sync the
   // Google profile with the PizzaHub backend so the backend JWT + user role
@@ -228,7 +234,7 @@ export default function SignInPage() {
             <input
               type={showPass ? 'text' : 'password'}
               required
-              autoComplete="new-password"
+              autoComplete="off"
               value={password}
               onChange={(e) => {
                 const value = e.target.value;
