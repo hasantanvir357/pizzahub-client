@@ -50,9 +50,11 @@ export default function Navbar() {
   };
 
   const userInitial = user?.name?.charAt(0) ?? '?';
+  // Cart is for guests and customers only — never shown for admin/vendor panels.
+  const showCart = !user || user.role === 'customer';
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-red-100 animate-from-top">
+    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-neutral-200/80 animate-from-top">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Brand Logo */}
         <Link href="/" className="flex items-center gap-2">
@@ -66,33 +68,34 @@ export default function Navbar() {
 
         {/* Desktop Links */}
         <nav className="hidden md:flex items-center gap-7 text-sm font-semibold text-gray-700">
-          <Link href="/" className="hover:text-[#E2001] transition-colors">
+          <Link href="/" className="hover:text-[#E20001] transition-colors">
             Home
           </Link>
-          <Link href="/menu" className="hover:text-[#E2001] transition-colors">
+          <Link href="/menu" className="hover:text-[#E20001] transition-colors">
             Browse Menu
           </Link>
         </nav>
 
         {/* Auth Actions */}
         <div className="hidden md:flex items-center gap-3">
-          {user ? (
-            <>
-              {/* Cart Badge Button */}
-              <button
-                type="button"
-                onClick={openCart}
-                aria-label="Open shopping cart"
-                className="relative flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-semibold px-3.5 py-2 rounded-full shadow-sm"
-              >
-                <ShoppingCart className="w-5 h-5" />
-                <span className="text-sm font-bold">Cart</span>
-                <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 flex items-center justify-center font-extrabold text-xs bg-white text-red-600 rounded-full">
-                  {itemCount}
-                </span>
-              </button>
+          {/* Cart Badge Button (guests & customers only) */}
+          {showCart && (
+            <button
+              type="button"
+              onClick={openCart}
+              aria-label="Open shopping cart"
+              className="relative flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-semibold px-3.5 py-2 rounded-full shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-red-600/30 active:scale-[0.98]"
+            >
+              <ShoppingCart className="w-5 h-5" />
+              <span className="text-sm font-bold">Cart</span>
+              <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 flex items-center justify-center font-extrabold text-xs bg-white text-red-600 rounded-full">
+                {itemCount}
+              </span>
+            </button>
+          )}
 
-              <div className="relative" data-user-menu>
+          {user && (
+            <div className="relative" data-user-menu>
                 <button
                   type="button"
                   onClick={() => setUserMenuOpen((prev) => !prev)}
@@ -111,7 +114,7 @@ export default function Navbar() {
                 )}
                 <span className="text-xs font-bold text-gray-800 max-w-[140px] truncate">{user.name}</span>
                 <ChevronDown
-                  className={`w-3.5 h-3.5 text-[#E2001] transition-transform duration-200 ${userMenuOpen ? 'rotate-180' : ''}`}
+                  className={`w-3.5 h-3.5 text-[#E20001] transition-transform duration-200 ${userMenuOpen ? 'rotate-180' : ''}`}
                 />
               </button>
 
@@ -133,7 +136,7 @@ export default function Navbar() {
                     <Link
                       href="/dashboard"
                       onClick={() => setUserMenuOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-red-50 hover:text-[#E2001] transition-all duration-200"
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-red-50 hover:text-[#E20001] transition-all duration-200"
                     >
                       <LayoutDashboard className="w-4 h-4" />
                       Dashboard
@@ -141,7 +144,7 @@ export default function Navbar() {
                     <button
                       type="button"
                       onClick={handleLogout}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-[#E2001] hover:bg-red-50 transition-all duration-200"
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-[#E20001] hover:bg-red-50 transition-all duration-200"
                     >
                       <LogOut className="w-4 h-4" />
                       Logout
@@ -149,16 +152,21 @@ export default function Navbar() {
                   </div>
                 </div>
               )}
-              </div>
-            </>
-          ) : (
+            </div>
+          )}
+
+          {/* Guest actions */}
+          {!user && (
             <>
-              <Link href="/sign-in" className="px-4 py-2 text-sm font-bold text-gray-700 hover:text-[#E2001]">
+              <Link
+                href="/sign-in"
+                className="px-4 py-2 text-sm font-bold text-gray-700 hover:text-[#E20001] transition-colors"
+              >
                 Sign In
               </Link>
               <Link
                 href="/sign-up"
-                className="px-5 py-2 rounded-full bg-red-600 hover:bg-red-700 text-white font-semibold opacity-100 shadow-sm transition-all"
+                className="px-5 py-2 rounded-full bg-red-600 hover:bg-red-700 text-white font-semibold shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-red-600/30 active:scale-[0.98]"
               >
                 Order Now
               </Link>
@@ -181,23 +189,26 @@ export default function Navbar() {
           <Link href="/menu" onClick={() => setMobileOpen(false)} className="block text-sm font-semibold">
             Browse Menu
           </Link>
+          {/* Cart entry — guests & customers only */}
+          {showCart && (
+            <button
+              type="button"
+              onClick={() => {
+                setMobileOpen(false);
+                openCart();
+              }}
+              className="w-full flex items-center gap-3 px-4 py-2.5 rounded-full bg-red-600 hover:bg-red-700 text-white font-semibold shadow-sm transition-all duration-300 active:scale-[0.98]"
+            >
+              <ShoppingCart className="w-4 h-4" />
+              Cart {itemCount > 0 ? `(${itemCount})` : ''}
+            </button>
+          )}
           {user ? (
             <>
-              <button
-                type="button"
-                onClick={() => {
-                  setMobileOpen(false);
-                  openCart();
-                }}
-                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-full bg-red-600 hover:bg-red-700 text-white font-semibold shadow-sm"
-              >
-                <ShoppingCart className="w-4 h-4" />
-                Cart {itemCount > 0 ? `(${itemCount})` : ''}
-              </button>
               <Link
                 href="/dashboard"
                 onClick={() => setMobileOpen(false)}
-                className="block text-sm font-bold text-[#E2001]"
+                className="block text-sm font-bold text-[#E20001]"
               >
                 Dashboard ({user.role})
               </Link>
@@ -216,14 +227,14 @@ export default function Navbar() {
               <Link
                 href="/sign-in"
                 onClick={() => setMobileOpen(false)}
-                className="flex-1 text-center py-2 rounded-xl border border-gray-200 text-sm font-bold"
+                className="flex-1 text-center py-2 rounded-xl border border-neutral-200/80 text-sm font-bold transition-all duration-300 active:scale-[0.98]"
               >
                 Sign In
               </Link>
               <Link
                 href="/sign-up"
                 onClick={() => setMobileOpen(false)}
-                className="flex-1 text-center py-2 rounded-xl bg-[#E2001] text-white text-sm font-bold"
+                className="flex-1 text-center py-2 rounded-xl bg-[#E20001] text-white text-sm font-bold transition-all duration-300 active:scale-[0.98]"
               >
                 Sign Up
               </Link>

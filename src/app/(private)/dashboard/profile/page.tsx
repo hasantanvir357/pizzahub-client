@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
 import { getAuthUser, getToken, setAuthSession, AuthUser } from '@/lib/auth-session';
 import { toast } from 'sonner';
 
@@ -14,6 +13,40 @@ export default function ProfilePage() {
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+
+  // Downscale any image on a canvas so we always have a clean, lightweight
+  // 256×256 JPEG data URL — even when ImgBB is unavailable or blocked.
+  const compressImage = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const objectUrl = URL.createObjectURL(file);
+      const img = new window.Image();
+      img.onload = () => {
+        try {
+          const MAX = 256;
+          const canvas = document.createElement('canvas');
+          canvas.width = MAX;
+          canvas.height = MAX;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) throw new Error('Canvas unavailable');
+
+          // Cover-fit: crop to a centered square so avatars never stretch.
+          const scale = Math.max(MAX / img.width, MAX / img.height);
+          const drawW = img.width * scale;
+          const drawH = img.height * scale;
+          ctx.drawImage(img, (MAX - drawW) / 2, (MAX - drawH) / 2, drawW, drawH);
+          URL.revokeObjectURL(objectUrl);
+          resolve(canvas.toDataURL('image/jpeg', 0.8));
+        } catch (err) {
+          URL.revokeObjectURL(objectUrl);
+          reject(err);
+        }
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error('Could not read the selected image'));
+      };
+      img.src = objectUrl;
+    });
 
   const uploadToImgBB = async (file: File) => {
     const formData = new FormData();
@@ -33,13 +66,32 @@ export default function ProfilePage() {
     if (!file) return;
     setUploading(true);
     setMessage('');
+    setError('');
     try {
-      const url = await uploadToImgBB(file);
-      setImage(url);
+      // 1. Always compress locally first → instant preview + reliable fallback.
+      const dataUrl = await compressImage(file);
+      setImage(dataUrl);
+      setMessage('Photo ready — press "Save Changes" to apply it.');
+
+      // 2. Best-effort ImgBB upload when a key is configured.
+      const apiKey = process.env.NEXT_PUBLIC_IMGBB_API_KEY;
+      if (apiKey) {
+        try {
+          const url = await uploadToImgBB(file);
+          setImage(url);
+          setMessage('Photo uploaded — press "Save Changes" to apply it.');
+        } catch {
+          // Keep the locally compressed data URL; never surface an error.
+        }
+      }
+      toast.success('Profile photo ready!');
     } catch {
-      setMessage('Failed to upload profile photo. Please try again.');
+      setError('Could not read that image. Please try a different PNG or JPG.');
+      toast.error('Could not read that image. Please try a different PNG or JPG.');
     } finally {
       setUploading(false);
+      // Allow re-selecting the same file later.
+      e.target.value = '';
     }
   };
 
@@ -47,6 +99,7 @@ export default function ProfilePage() {
     e.preventDefault();
     setSaving(true);
     setMessage('');
+    setError('');
 
     const body: { name: string; restaurantName?: string; image?: string } = { name };
     if (user?.role === 'vendor') body.restaurantName = restaurantName;
@@ -90,9 +143,9 @@ export default function ProfilePage() {
       <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-gray-100 p-6 space-y-5">
         {/* Avatar Preview & Optional Profile Photo */}
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full overflow-hidden bg-red-50 border border-red-100 flex items-center justify-center shrink-0">
-            {user?.image ? (
-              <Image src={user.image} alt={user.name} width={64} height={64} className="w-full h-full object-cover" />
+          <div className="w-16 h-16 rounded-full overflow-hidden bg-red-50 border border-red-100 flex items-center justify-center shrink-0 transition-all duration-300">
+            {image ? (
+              <img src={image} alt={name || 'Profile photo'} className="w-full h-full object-cover" />
             ) : (
               <span className="w-10 h-10 rounded-full bg-[#E20001] text-white text-lg font-bold flex items-center justify-center">
                 {user?.name?.charAt(0) ?? '?'}
@@ -109,9 +162,11 @@ export default function ProfilePage() {
               accept="image/*"
               onChange={handleImageChange}
               disabled={uploading}
-              className="block w-full text-sm text-gray-600 file:mr-3 file:rounded-lg file:border-0 file:bg-[#E2001] file:px-4 file:py-2 file:text-xs file:font-bold file:text-white hover:file:bg-[#DB0007] disabled:opacity-60"
+              className="block w-full text-sm text-gray-600 file:mr-3 file:rounded-lg file:border-0 file:bg-[#E20001] file:px-4 file:py-2 file:text-xs file:font-bold file:text-white hover:file:bg-[#DB0007] disabled:opacity-60"
             />
-            <p className="text-xs text-gray-400 mt-1.5">PNG or JPG, uploaded to ImgBB before saving.</p>
+            <p className="text-xs text-gray-400 mt-1.5">
+              {uploading ? 'Optimizing photo…' : 'PNG or JPG — auto-resized to 256×256 before saving.'}
+            </p>
           </div>
         </div>
 
@@ -155,7 +210,7 @@ export default function ProfilePage() {
         <button
           type="submit"
           disabled={saving}
-          className="w-full rounded-lg bg-[#E20001] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#DB0007] transition-colors disabled:opacity-60"
+          className="w-full rounded-lg bg-[#E20001] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#DB0007] transition-all duration-300 hover:shadow-lg hover:shadow-red-600/30 active:scale-[0.98] disabled:opacity-60"
         >
           {saving ? 'Saving...' : 'Save Changes'}
         </button>

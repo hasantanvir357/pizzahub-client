@@ -16,6 +16,7 @@ export default function BrowseMenuPage() {
   const [items, setItems] = useState<MenuItem[]>([]);
   const [offers, setOffers] = useState<MenuItem[]>([]);
   const [activeOfferIndex, setActiveOfferIndex] = useState(0);
+  const [offerPaused, setOfferPaused] = useState(false);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState(initialCategory);
@@ -45,6 +46,17 @@ export default function BrowseMenuPage() {
   const showPrevOffer = () =>
     setActiveOfferIndex((prev) => (prev - 1 + offers.length) % offers.length);
   const showNextOffer = () => setActiveOfferIndex((prev) => (prev + 1) % offers.length);
+
+  // Auto-advance the offer banner every 5 seconds; pause while hovering.
+  // The effect re-runs after each slide change, which also restarts the 5s
+  // clock after a manual arrow/dot interaction.
+  useEffect(() => {
+    if (offerPaused || offers.length <= 1) return;
+    const timer = setInterval(() => {
+      setActiveOfferIndex((prev) => (prev + 1) % offers.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [offerPaused, offers.length, activeOfferIndex]);
 
   const activeOffer = offers[activeOfferIndex] ?? offers[0];
   const discountPercent =
@@ -84,10 +96,17 @@ export default function BrowseMenuPage() {
         <div
           className="group mb-10 rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 animate-from-top"
           style={{ background: 'linear-gradient(135deg, #E20001 0%, #B80001 100%)' }}
+          onMouseEnter={() => setOfferPaused(true)}
+          onMouseLeave={() => setOfferPaused(false)}
+          onFocus={() => setOfferPaused(true)}
+          onBlur={() => setOfferPaused(false)}
         >
           <div className="flex flex-col sm:flex-row items-center gap-6 p-6 sm:p-8">
             {/* Offer Copy */}
-            <div className="flex-1 text-white min-w-0">
+            <div
+              key={`offer-copy-${activeOffer._id}`}
+              className="flex-1 text-white min-w-0 split-from-left"
+            >
               <div className="flex flex-wrap items-center gap-3">
                 <span className="px-3 py-1 rounded-full bg-white text-[#E20001] text-[11px] font-extrabold uppercase tracking-wider shadow-xs">
                   {activeOffer.discountLabel ||
@@ -163,7 +182,10 @@ export default function BrowseMenuPage() {
             </div>
 
             {/* Offer Image */}
-            <div className="relative w-full sm:w-64 h-44 sm:h-44 shrink-0 rounded-2xl overflow-hidden ring-2 ring-white/40">
+            <div
+              key={`offer-image-${activeOffer._id}`}
+              className="relative w-full sm:w-64 h-44 sm:h-44 shrink-0 rounded-2xl overflow-hidden ring-2 ring-white/40 split-from-right"
+            >
               <Image
                 src={activeOffer.image}
                 alt={activeOffer.name}

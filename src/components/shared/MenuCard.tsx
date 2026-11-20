@@ -95,7 +95,7 @@ export default function MenuCard({ item, index = 0 }: { item: MenuItem; index?: 
   return (
     <div
       style={{ animationDelay: `${index * 110}ms` }}
-      className="group bg-white rounded-2xl border border-gray-100 shadow-xs hover:shadow-xl hover:-translate-y-2 hover:border-[#E20001]/35 transition-all duration-500 overflow-hidden flex flex-col animate-from-bottom"
+      className="group bg-white rounded-2xl border border-neutral-200/80 shadow-xs hover:shadow-lg hover:-translate-y-1 hover:border-[#E20001]/35 transition-all duration-300 overflow-hidden flex flex-col animate-from-bottom"
     >
       {/* Image & Badge */}
       <div className="relative h-52 w-full bg-gray-100 overflow-hidden">

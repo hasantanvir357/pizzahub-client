@@ -48,7 +48,7 @@ export default function GuestReviews() {
           {REVIEWS.map((rev) => (
             <div
               key={rev.name}
-              className="bg-white p-6 rounded-2xl border border-gray-100 shadow-xs flex flex-col justify-between"
+              className="bg-white p-6 rounded-2xl border border-neutral-200/80 shadow-xs hover:-translate-y-1 hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-center justify-between mb-4">

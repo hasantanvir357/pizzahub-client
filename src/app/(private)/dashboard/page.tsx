@@ -253,7 +253,7 @@ export default function DashboardOverviewPage() {
 
         {recentOrders.length > 0 ? (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
+            <table className="w-full min-w-[640px] text-left text-sm">
               <thead className="bg-gray-50 text-xs uppercase text-gray-500">
                 <tr>
                   <th className="px-6 py-3">Pizza</th>

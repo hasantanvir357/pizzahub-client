@@ -46,7 +46,7 @@ export default function Categories() {
             <Link
               key={cat.name}
               href={`/menu?category=${encodeURIComponent(cat.name)}`}
-              className="group relative h-56 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all"
+              className="group relative h-56 rounded-2xl overflow-hidden border border-neutral-200/80 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 active:scale-[0.98]"
             >
               <Image
                 src={cat.image}

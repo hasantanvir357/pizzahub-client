@@ -128,47 +128,85 @@ export default function MyOrdersPage() {
       ) : orders.length === 0 ? (
         <p className="text-sm text-gray-500">You have not placed any orders yet.</p>
       ) : (
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-gray-50 text-xs uppercase text-gray-500">
-              <tr>
-                <th className="px-5 py-3">Pizza</th>
-                <th className="px-5 py-3">Kitchen</th>
-                <th className="px-5 py-3">Size & Qty</th>
-                <th className="px-5 py-3">Total</th>
-                <th className="px-5 py-3">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {orders.map((o) => (
-                <tr key={o._id} className="transition-all duration-300 ease-out hover:bg-red-50/40">
-                  <td className="px-5 py-3.5 font-bold text-gray-900">{o.pizzaName}</td>
-                  <td className="px-5 py-3.5 text-gray-600">{o.restaurantName}</td>
-                  <td className="px-5 py-3.5 text-gray-600">
+        <>
+          {/* Mobile: stacked order cards (no horizontal overflow) */}
+          <div className="md:hidden space-y-3">
+            {orders.map((o) => (
+              <div
+                key={o._id}
+                className="bg-white rounded-2xl border border-neutral-200/80 p-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-bold text-sm text-gray-900 truncate">{o.pizzaName}</p>
+                    <p className="text-xs text-gray-500 mt-0.5 truncate">{o.restaurantName}</p>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-red-50 text-[#E20001] capitalize shrink-0">
+                    {o.status}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-3 mt-3 pt-3 border-t border-neutral-200/80">
+                  <span className="text-xs font-semibold text-gray-600">
                     {o.size} × {o.quantity}
-                  </td>
-                  <td className="px-5 py-3.5 font-bold text-[#E20001]">${o.totalPrice}</td>
-                  <td className="px-5 py-3.5">
-                    <div className="flex items-center gap-2">
-                      <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-red-50 text-[#E20001] capitalize">
-                        {o.status}
-                      </span>
-                      {o.status === 'pending' && (
-                        <button
-                          type="button"
-                          onClick={() => openCancelModal(o)}
-                          className="rounded-lg border border-[#E20001] px-2.5 py-1 text-[11px] font-bold text-[#E20001] transition-all duration-300 ease-out hover:bg-[#E20001] hover:text-white"
-                        >
-                          Cancel Order
-                        </button>
-                      )}
-                    </div>
-                  </td>
+                  </span>
+                  <span className="text-base font-extrabold text-[#E20001]">${o.totalPrice}</span>
+                </div>
+                {o.status === 'pending' && (
+                  <button
+                    type="button"
+                    onClick={() => openCancelModal(o)}
+                    className="mt-3 w-full rounded-xl border border-[#E20001] px-3 py-2 text-xs font-bold text-[#E20001] transition-all duration-300 hover:bg-[#E20001] hover:text-white active:scale-[0.98]"
+                  >
+                    Cancel Order
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop: table with horizontal scroll guard */}
+          <div className="hidden md:block bg-white rounded-2xl border border-neutral-200/80 overflow-x-auto">
+            <table className="w-full min-w-[640px] text-left text-sm">
+              <thead className="bg-gray-50 text-xs uppercase text-gray-500">
+                <tr>
+                  <th className="px-5 py-3">Pizza</th>
+                  <th className="px-5 py-3">Kitchen</th>
+                  <th className="px-5 py-3">Size & Qty</th>
+                  <th className="px-5 py-3">Total</th>
+                  <th className="px-5 py-3">Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {orders.map((o) => (
+                  <tr key={o._id} className="transition-all duration-300 ease-out hover:bg-red-50/40">
+                    <td className="px-5 py-3.5 font-bold text-gray-900">{o.pizzaName}</td>
+                    <td className="px-5 py-3.5 text-gray-600">{o.restaurantName}</td>
+                    <td className="px-5 py-3.5 text-gray-600">
+                      {o.size} × {o.quantity}
+                    </td>
+                    <td className="px-5 py-3.5 font-bold text-[#E20001]">${o.totalPrice}</td>
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-red-50 text-[#E20001] capitalize">
+                          {o.status}
+                        </span>
+                        {o.status === 'pending' && (
+                          <button
+                            type="button"
+                            onClick={() => openCancelModal(o)}
+                            className="rounded-lg border border-[#E20001] px-2.5 py-1 text-[11px] font-bold text-[#E20001] transition-all duration-300 ease-out hover:bg-[#E20001] hover:text-white active:scale-[0.98]"
+                          >
+                            Cancel Order
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       {/* Cancellation Check Modal */}
