@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getAuthUser, getToken, AuthUser } from '@/lib/auth-session';
+import { apiFetch } from '@/lib/api';
 import { BarChart3, DollarSign, ShoppingBag, Trash2, Utensils, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -62,11 +63,18 @@ export default function DashboardOverviewPage() {
   useEffect(() => {
     const fetchStats = async () => {
       const token = getToken();
-      if (!token) return;
+      // No token => no authenticated session: stop the skeleton without
+      // touching the API so a signed-out visitor never sees a hanging loader.
+      if (!token) {
+        setLoading(false);
+        return;
+      }
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orders/dashboard-stats`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        // Role-aware overview endpoint: the backend returns the signed-in
+        // user's own stats slice (customer orders / vendor kitchen / admin
+        // platform) for this bearer token. A failed response is surfaced to the
+        // caller only — it never clears the session or triggers a logout.
+        const res = await apiFetch('/api/orders/dashboard-stats');
         if (res.ok) {
           const data = await res.json();
           setStats(data.stats || {});
@@ -84,10 +92,7 @@ export default function DashboardOverviewPage() {
     if (!token) return;
     setClearingHistory(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orders/history`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await apiFetch('/api/orders/history', { method: 'DELETE' });
       if (res.ok) {
         setRecentOrders([]);
         router.refresh();
@@ -104,10 +109,7 @@ export default function DashboardOverviewPage() {
     const token = getToken();
     if (!token) return;
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orders/history/${id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await apiFetch(`/api/orders/history/${id}`, { method: 'DELETE' });
       if (res.ok) {
         setRecentOrders((prev) => prev.filter((o) => o._id !== id));
         router.refresh();
