@@ -47,6 +47,7 @@ export default function DashboardOverviewPage() {
   const [stats, setStats] = useState<Record<string, number>>({});
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const [statsError, setStatsError] = useState<string | null>(null);
   const [clearingHistory, setClearingHistory] = useState(false);
 
   useEffect(() => {
@@ -65,21 +66,30 @@ export default function DashboardOverviewPage() {
       const token = getToken();
       // No token => no authenticated session: stop the skeleton without
       // touching the API so a signed-out visitor never sees a hanging loader.
+      // Surfaced as an error state — never as a logout / session clear.
       if (!token) {
+        setStatsError('We could not verify your session. Please sign in again to load your dashboard stats.');
         setLoading(false);
         return;
       }
       try {
         // Role-aware overview endpoint: the backend returns the signed-in
         // user's own stats slice (customer orders / vendor kitchen / admin
-        // platform) for this bearer token. A failed response is surfaced to the
-        // caller only — it never clears the session or triggers a logout.
+        // platform) for this bearer token. A failed response (401/403/5xx) is
+        // surfaced to the caller only — it never clears the session or
+        // triggers a logout; the panel degrades to this error state instead.
         const res = await apiFetch('/api/orders/dashboard-stats');
         if (res.ok) {
           const data = await res.json();
           setStats(data.stats || {});
           setRecentOrders(data.recentOrders || []);
+          setStatsError(null);
+        } else {
+          setStatsError('Failed to load your dashboard stats. Please try again in a moment.');
         }
+      } catch {
+        // Network failure — same policy: show the error, keep the session.
+        setStatsError('Failed to load your dashboard stats. Check your connection and try again.');
       } finally {
         setLoading(false);
       }
@@ -122,6 +132,11 @@ export default function DashboardOverviewPage() {
     }
   };
 
+  // Case-insensitive role matching: a seeded account may store "Admin"/"ADMIN"
+  // (or the session object may differ from the JWT payload in casing), so the
+  // stat cards must resolve on the normalized value.
+  const normalizedRole = user?.role?.toLowerCase();
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -138,9 +153,20 @@ export default function DashboardOverviewPage() {
         <p className="text-sm text-gray-500 mt-1">Here is your live {user?.role} activity overview.</p>
       </div>
 
+      {/* Failed stats requests degrade to this error state — the session is
+          never cleared and the user is never signed out by a bad response. */}
+      {statsError && (
+        <div
+          role="alert"
+          className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-[#E20001]"
+        >
+          {statsError}
+        </div>
+      )}
+
       {/* Role-Specific Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {user?.role === 'admin' && (
+        {normalizedRole === 'admin' && (
           <>
             <StatCard title="Total Revenue" value={`$${stats.totalRevenue || 0}`} icon={DollarSign} />
             <StatCard title="Total Orders" value={stats.totalOrders || 0} icon={ShoppingBag} />
@@ -149,7 +175,7 @@ export default function DashboardOverviewPage() {
           </>
         )}
 
-        {user?.role === 'vendor' && (
+        {normalizedRole === 'vendor' && (
           <>
             <StatCard title="Kitchen Earnings" value={`$${stats.totalEarnings || 0}`} icon={DollarSign} />
             <StatCard title="Total Orders" value={stats.totalOrders || 0} icon={ShoppingBag} />
@@ -158,7 +184,7 @@ export default function DashboardOverviewPage() {
           </>
         )}
 
-        {user?.role === 'customer' && (
+        {normalizedRole === 'customer' && (
           <>
             <StatCard title="Total Orders" value={stats.totalOrders || 0} icon={ShoppingBag} />
             <StatCard title="Active Orders" value={stats.activeOrders || 0} icon={Utensils} />

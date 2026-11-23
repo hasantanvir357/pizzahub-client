@@ -162,12 +162,18 @@ export default function Navbar() {
                   <div className="px-4 py-3 bg-red-50/70 border-b border-red-100">
                     <p className="text-sm font-extrabold text-gray-900 truncate">{user.name}</p>
                     <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full bg-[#E20001] text-white text-[10px] font-bold uppercase tracking-wider">
-                      {user.role.toUpperCase()}
+                      {/* Defensive: a session object missing `role` must not
+                          crash the dropdown (the label just falls back). */}
+                      {(user.role ?? 'user').toUpperCase()}
                     </span>
                   </div>
 
                   {/* Dropdown Menu Items */}
                   <div className="py-2">
+                    {/* Every role's overview lives at /dashboard — the dashboard
+                        layout/sidebar renders the role-specific admin, vendor and
+                        customer panels from there (there is no separate
+                        /dashboard/admin route to hit). */}
                     <Link
                       href="/dashboard"
                       onClick={() => setUserMenu((prev) => ({ ...prev, open: false }))}
