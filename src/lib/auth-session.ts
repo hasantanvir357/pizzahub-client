@@ -11,30 +11,36 @@ export interface AuthUser {
 }
 
 const TOKEN_COOKIE = 'pizzahub_token';
-/** Mirror key used only when the browser refuses the cookie write (see setAuthSession). */
+/** Fallback key for when the browser drops or blocks the auth cookie. */
 const TOKEN_KEY = 'pizzahub_token';
+const TOKEN_MAX_AGE = 60 * 60 * 24 * 7;
+const COOKIE_SECURITY = process.env.NODE_ENV === 'production' ? '; Secure' : '';
 
 /** Read the auth cookie only (no localStorage fallback). */
 function getCookieToken(): string | null {
   if (typeof document === 'undefined') return null;
   const match = document.cookie.match(new RegExp(`(^| )${TOKEN_COOKIE}=([^;]+)`));
-  return match ? match[2] : null;
+  if (!match) return null;
+  try {
+    return decodeURIComponent(match[2]);
+  } catch {
+    return match[2];
+  }
 }
 
 export function setAuthSession(token: string, user: AuthUser) {
   if (typeof document === 'undefined') return;
- 
-  document.cookie = `${TOKEN_COOKIE}=; path=/; max-age=0`;
-  document.cookie = `${TOKEN_COOKIE}=${token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
 
-  if (!getCookieToken()) {
-    try {
-      localStorage.setItem(TOKEN_KEY, token);
-    } catch {
-     
-    }
+  // The cookie is written site-wide so it survives navigation between public
+  // and dashboard routes. Keep a localStorage mirror too: if the browser
+  // refuses the cookie, API calls can still send the bearer token.
+  document.cookie = `${TOKEN_COOKIE}=${encodeURIComponent(token)}; path=/; max-age=${TOKEN_MAX_AGE}; SameSite=Lax${COOKIE_SECURITY}`;
+  try {
+    localStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem('pizzahub_user', JSON.stringify(user));
+  } catch {
+    // Storage may be disabled; the cookie remains authoritative.
   }
-  localStorage.setItem('pizzahub_user', JSON.stringify(user));
   window.dispatchEvent(new Event('auth-change'));
 }
 
@@ -42,7 +48,7 @@ export function getToken(): string | null {
   if (typeof document === 'undefined') return null;
   const cookieToken = getCookieToken();
   if (cookieToken) return cookieToken;
- 
+
   try {
     return localStorage.getItem(TOKEN_KEY);
   } catch {
@@ -63,7 +69,7 @@ export function getAuthUser(): AuthUser | null {
 
 export function clearAuthSession() {
   if (typeof document === 'undefined') return;
-  document.cookie = `${TOKEN_COOKIE}=; path=/; max-age=0`;
+  document.cookie = `${TOKEN_COOKIE}=; path=/; max-age=0; SameSite=Lax${COOKIE_SECURITY}`;
   // Wipe every client-side store so no credentials or session data survive logout.
   localStorage.clear();
   sessionStorage.clear();
